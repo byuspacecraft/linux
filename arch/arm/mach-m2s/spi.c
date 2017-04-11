@@ -274,6 +274,20 @@ void __init m2s_spi_init(void)
 		},
 #endif
 
+#if defined(CONFIG_M2S_MSS_SPI1) && defined(CONFIG_SPI_SPIDEV)
+		/*
+		 * On-module SPI using SPI user-space interface
+		 * (resides at SPI1,CS0)
+		 */
+		{
+			.modalias = "spidev",
+			.max_speed_hz = CONFIG_SYS_M2S_SYSREF/4,
+			.bus_num = 1,
+			.chip_select = 0,
+			.mode = SPI_MODE_3,
+		},
+#endif
+
 #if defined(CONFIG_M2S_MSS_SPI1) && defined(CONFIG_MTD_M25P80)
 		/*
 		 * On-dongle SPI Flash (resides at SPI1,CS0)
@@ -352,18 +366,39 @@ void __init m2s_spi_init(void)
 			.nr_parts = ARRAY_SIZE(sf2_dev_kit_sf_mtd),
 			.type = "at25df641",
 		};
+#endif
 
-		static struct spi_board_info sf2_dev_kit_sf_inf = {
+		static struct spi_board_info sf2_dev_kit_sf_inf[] = {
+#if defined(CONFIG_M2S_MSS_SPI0) && defined(CONFIG_MTD_M25P80)
+		{
 			.modalias = "m25p32",
 			.max_speed_hz = CONFIG_SYS_M2S_SYSREF/4,
 			.bus_num = 0,
 			.chip_select = 0,
 			.platform_data = &sf2_dev_kit_sf_data,
 			.mode = SPI_MODE_3,
+		},
+#endif
+
+#if defined(CONFIG_M2S_MSS_SPI1) && defined(CONFIG_SPI_SPIDEV)
+		/*
+		 * On-module SPI using SPI user-space interface
+		 * (resides at SPI1,CS0)
+		 */
+		{
+			.modalias = "spidev",
+			.max_speed_hz = CONFIG_SYS_M2S_SYSREF/4,
+			.bus_num = 1,
+			.chip_select = 0,
+			.mode = SPI_MODE_3,
+			
+		},
+#endif
 		};
 
-		spi_register_board_info(&sf2_dev_kit_sf_inf, 1);
-#endif
+		spi_register_board_info(sf2_dev_kit_sf_inf,
+			sizeof(sf2_dev_kit_sf_inf) /
+			sizeof(struct spi_board_info));
 	}
 
 #endif
