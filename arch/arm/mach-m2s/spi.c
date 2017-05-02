@@ -64,8 +64,8 @@ static struct resource spi_m2s_dev0_resources[] = {
 		.end	= PDMA_M2S_REGS + 1,
 		.flags	= IORESOURCE_MEM,
 	}, {
-               .start  = PDMA_M2S_IRQ,
-               .flags  = IORESOURCE_IRQ,
+		.start  = PDMA_M2S_IRQ,
+		.flags  = IORESOURCE_IRQ,
 	},
 };
 
@@ -165,7 +165,7 @@ void __init m2s_spi_init(void)
 			}, {
 				.name = "spi_flash_jffs2",
 				.offset = M2S_SOM_SF_MTD_OFFSET +
-					  M2S_SOM_SF_MTD_SIZE0,
+					M2S_SOM_SF_MTD_SIZE0,
 				.size = M2S_SOM_SF_MTD_SIZE1,
 			},
 		};
@@ -185,38 +185,31 @@ void __init m2s_spi_init(void)
 		 * SPI Flash partitioning for
 		 * the first on-dongle SPI Flash (SPI1, CS0):
 		 */
-#		define FLASH_PART1_OFFSET__DONGLE1	(1024 * 1024 * 1)
-#		define FLASH_SIZE__DONGLE1		(1024 * 1024 * 4)
+#		define FLASH_PART1_OFFSET__DONGLE1	(1024 * 1024 * 500)
 		static struct mtd_partition
 			spi_flash_partitions__dongle1[] = {
-			{
-				.name = "dongle1_part0",
-				.size = FLASH_PART1_OFFSET__DONGLE1,
-				.offset = 0,
-			},
-			{
-				.name = "dongle1_part1",
-				.size = FLASH_SIZE__DONGLE1 -
-					FLASH_PART1_OFFSET__DONGLE1,
-				.offset = FLASH_PART1_OFFSET__DONGLE1,
-			},
-		};
+				{
+					.name = "dongle1_part0",
+					.size = FLASH_PART1_OFFSET__DONGLE1,
+					.offset = 0,
+				},
+			};
 
 		/*
 		 * SPI Flash data for the first on-dongle Flash
 		 */
 		static struct flash_platform_data
 			spi_flash_data__dongle1 = {
-			.name = "m25p32",
-			.parts =  spi_flash_partitions__dongle1,
-			.nr_parts =
-			ARRAY_SIZE(spi_flash_partitions__dongle1),
-			.type = "m25p32",
-		};
+				.name = "spi_nand",
+				.parts =  spi_flash_partitions__dongle1,
+				.nr_parts =
+					ARRAY_SIZE(spi_flash_partitions__dongle1),
+				.type = "spi_nand",
+			};
 #endif
 
 #if defined(CONFIG_M2S_MSS_SPI1) && \
-	(defined(CONFIG_MTD_M25P80) || defined(CONFIG_SPI_SPIDEV))
+		(defined(CONFIG_MTD_M25P80) || defined(CONFIG_SPI_SPIDEV))
 
 #if !defined(CONFIG_SPI_SPIDEV)
 
@@ -228,30 +221,30 @@ void __init m2s_spi_init(void)
 #		define FLASH_SIZE__DONGLE2		(1024 * 1024 * 4)
 		static struct mtd_partition
 			spi_flash_partitions__dongle2[] = {
-			{
-				.name = "dongle2_part0",
-				.size = FLASH_PART1_OFFSET__DONGLE2,
-				.offset = 0,
-			},
-			{
-				.name = "dongle2_part1",
-				.size = FLASH_SIZE__DONGLE2 -
-					FLASH_PART1_OFFSET__DONGLE2,
-				.offset = FLASH_PART1_OFFSET__DONGLE2,
-			},
-		};
+				{
+					.name = "dongle2_part0",
+					.size = FLASH_PART1_OFFSET__DONGLE2,
+					.offset = 0,
+				},
+				{
+					.name = "dongle2_part1",
+					.size = FLASH_SIZE__DONGLE2 -
+						FLASH_PART1_OFFSET__DONGLE2,
+					.offset = FLASH_PART1_OFFSET__DONGLE2,
+				},
+			};
 
 		/*
 		 * SPI Flash data for the second on-dongle Flash
 		 */
 		static struct flash_platform_data
 			spi_flash_data__dongle2 = {
-			.name = "m25p32",
-			.parts =  spi_flash_partitions__dongle2,
-			.nr_parts =
-			ARRAY_SIZE(spi_flash_partitions__dongle2),
-			.type = "m25p32",
-		};
+				.name = "m25p32",
+				.parts =  spi_flash_partitions__dongle2,
+				.nr_parts =
+					ARRAY_SIZE(spi_flash_partitions__dongle2),
+				.type = "m25p32",
+			};
 #endif
 #endif
 
@@ -261,67 +254,67 @@ void __init m2s_spi_init(void)
 		static struct spi_board_info m2s_som_spi_board_info[] = {
 
 #if defined(CONFIG_M2S_MSS_SPI0) && defined(CONFIG_MTD_M25P80)
-		/*
-		 * On-module SPI Flash (resides at SPI0,CS0)
-		 */
-		{
-			.modalias = "m25p32",
-			.max_speed_hz = CONFIG_SYS_M2S_SYSREF/4,
-			.bus_num = 0,
-			.chip_select = 0,
-			.platform_data = &m2s_som_sf_data,
-			.mode = SPI_MODE_3,
-		},
+			/*
+			 * On-module SPI Flash (resides at SPI0,CS0)
+			 */
+			{
+				.modalias = "m25p32",
+				.max_speed_hz = CONFIG_SYS_M2S_SYSREF/4,
+				.bus_num = 0,
+				.chip_select = 0,
+				.platform_data = &m2s_som_sf_data,
+				.mode = SPI_MODE_3,
+			},
 #endif
 
 #if defined(CONFIG_M2S_MSS_SPI1) && defined(CONFIG_SPI_SPIDEV)
-		/*
-		 * On-module SPI using SPI user-space interface
-		 * (resides at SPI1,CS0)
-		 */
-		{
-			.modalias = "spidev",
-			.max_speed_hz = CONFIG_SYS_M2S_SYSREF/4,
-			.bus_num = 1,
-			.chip_select = 0,
-			.mode = SPI_MODE_3,
-		},
-#endif
-
-#if defined(CONFIG_M2S_MSS_SPI1) && defined(CONFIG_MTD_M25P80)
-		/*
-		 * On-dongle SPI Flash (resides at SPI1,CS0)
-		 */
-		{
-			.modalias = "m25p32",
-			.platform_data = &spi_flash_data__dongle1,
-			.max_speed_hz = 25000000,
-			.bus_num = 1,
-			.chip_select = 0,
-			.mode = SPI_MODE_3,
-		},
-#endif
-
-#if defined(CONFIG_M2S_MSS_SPI1) && defined(CONFIG_MTD_M25P80)
-		/*
-		 * On-dongle SPI Flash (resides at SPI1,CS1)
-		 */
-		{
 			/*
-			 * Can be accessed either as an MTD Flash
-			 * or using the SPI user-space interface
+			 * On-module SPI using SPI user-space interface
+			 * (resides at SPI1,CS0)
 			 */
-#if defined(CONFIG_SPI_SPIDEV)
-			.modalias = "spidev",
-#else
-			.modalias = "m25p32",
-			.platform_data = &spi_flash_data__dongle2,
+			{
+				.modalias = "spidev",
+				.max_speed_hz = CONFIG_SYS_M2S_SYSREF/4,
+				.bus_num = 1,
+				.chip_select = 0,
+				.mode = SPI_MODE_3,
+			},
 #endif
-			.max_speed_hz = 25000000,
-			.bus_num = 1,
-			.chip_select = 1,
-			.mode = SPI_MODE_3,
-		},
+
+#if defined(CONFIG_M2S_MSS_SPI1) && defined(CONFIG_MTD_M25P80)
+			/*
+			 * On-dongle SPI Flash (resides at SPI1,CS0)
+			 */
+			{
+				.modalias = "spi_nand",
+				.platform_data = &spi_flash_data__dongle1,
+				.max_speed_hz = 25000000,
+				.bus_num = 1,
+				.chip_select = 0,
+				.mode = SPI_MODE_3,
+			},
+#endif
+
+#if defined(CONFIG_M2S_MSS_SPI1) && defined(CONFIG_MTD_M25P80)
+			/*
+			 * On-dongle SPI Flash (resides at SPI1,CS1)
+			 */
+			{
+				/*
+				 * Can be accessed either as an MTD Flash
+				 * or using the SPI user-space interface
+				 */
+#if defined(CONFIG_SPI_SPIDEV)
+				.modalias = "spidev",
+#else
+				.modalias = "m25p32",
+				.platform_data = &spi_flash_data__dongle2,
+#endif
+				.max_speed_hz = 25000000,
+				.bus_num = 1,
+				.chip_select = 1,
+				.mode = SPI_MODE_3,
+			},
 #endif
 		};
 
@@ -329,8 +322,8 @@ void __init m2s_spi_init(void)
 		 * Register the SPI slaves with the SPI stack
 		 */
 		spi_register_board_info(m2s_som_spi_board_info,
-			sizeof(m2s_som_spi_board_info) /
-			sizeof(struct spi_board_info));
+				sizeof(m2s_som_spi_board_info) /
+				sizeof(struct spi_board_info));
 
 	} else if (p == PLATFORM_SF2_DEV_KIT) {
 #if defined(CONFIG_M2S_MSS_SPI0) && defined(CONFIG_MTD_M25P80)
@@ -355,7 +348,7 @@ void __init m2s_spi_init(void)
 			}, {
 				.name = "spi_flash_jffs2",
 				.offset = SF2_DEV_KIT_SF_MTD_OFFSET +
-					  SF2_DEV_KIT_SF_MTD_SIZE0,
+					SF2_DEV_KIT_SF_MTD_SIZE0,
 				.size = SF2_DEV_KIT_SF_MTD_SIZE1,
 			},
 		};
@@ -370,35 +363,35 @@ void __init m2s_spi_init(void)
 
 		static struct spi_board_info sf2_dev_kit_sf_inf[] = {
 #if defined(CONFIG_M2S_MSS_SPI0) && defined(CONFIG_MTD_M25P80)
-		{
-			.modalias = "m25p32",
-			.max_speed_hz = CONFIG_SYS_M2S_SYSREF/4,
-			.bus_num = 0,
-			.chip_select = 0,
-			.platform_data = &sf2_dev_kit_sf_data,
-			.mode = SPI_MODE_3,
-		},
+			{
+				.modalias = "m25p32",
+				.max_speed_hz = CONFIG_SYS_M2S_SYSREF/4,
+				.bus_num = 0,
+				.chip_select = 0,
+				.platform_data = &sf2_dev_kit_sf_data,
+				.mode = SPI_MODE_3,
+			},
 #endif
 
 #if defined(CONFIG_M2S_MSS_SPI1) && defined(CONFIG_SPI_SPIDEV)
-		/*
-		 * On-module SPI using SPI user-space interface
-		 * (resides at SPI1,CS0)
-		 */
-		{
-			.modalias = "spidev",
-			.max_speed_hz = CONFIG_SYS_M2S_SYSREF/4,
-			.bus_num = 1,
-			.chip_select = 0,
-			.mode = SPI_MODE_3,
-			
-		},
+			/*
+			 * On-module SPI using SPI user-space interface
+			 * (resides at SPI1,CS0)
+			 */
+			{
+				.modalias = "spidev",
+				.max_speed_hz = CONFIG_SYS_M2S_SYSREF/4,
+				.bus_num = 1,
+				.chip_select = 0,
+				.mode = SPI_MODE_3,
+
+			},
 #endif
 		};
 
 		spi_register_board_info(sf2_dev_kit_sf_inf,
-			sizeof(sf2_dev_kit_sf_inf) /
-			sizeof(struct spi_board_info));
+				sizeof(sf2_dev_kit_sf_inf) /
+				sizeof(struct spi_board_info));
 	}
 
 #endif
