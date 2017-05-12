@@ -288,7 +288,7 @@ void __init m2s_spi_init(void)
 			{
 				.modalias = "spi_nand",
 				.platform_data = &spi_flash_data__dongle1,
-				.max_speed_hz = 25000000,
+				.max_speed_hz = 133000000,
 				.bus_num = 1,
 				.chip_select = 0,
 				.mode = SPI_MODE_3,

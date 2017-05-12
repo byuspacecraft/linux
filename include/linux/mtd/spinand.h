@@ -142,6 +142,7 @@ struct spinand_chip { /* used for multi chip */
 #endif
 };
 
+
 struct spinand_cmd {
 	u8 cmd;
 	unsigned n_addr;	

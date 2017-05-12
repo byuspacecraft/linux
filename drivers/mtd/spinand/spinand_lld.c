@@ -28,6 +28,8 @@ GNU General Public License for more details.
 
 #include <linux/spi/spi.h>
 
+//#define DEBUG_PRINT_JACOBW_ADD // enable debug print statements added by jacob willis
+
 #define mu_spi_nand_driver_version "M2S-MTD_01.00_Linux2.6.33_20100507"
 #define SPI_NAND_MICRON_DRIVER_KEY 0x1233567
 
@@ -35,6 +37,7 @@ GNU General Public License for more details.
 
 /**
    OOB area specification layout:  Total 32 available free bytes.
+   OOB = Out of Band
 */
 static struct nand_ecclayout spinand_oob_64 = {
 	.eccbytes = 24,
@@ -54,6 +57,26 @@ static struct nand_ecclayout spinand_oob_64 = {
 		{.offset = 56,
 		 .length = 8}, }
 };
+
+// Added by Jacob Willis from micron spi nand software solution
+static struct nand_ecclayout spinand_oob_128 = {
+	.eccbytes = 64,
+	.eccpos = {
+		64, 65, 66, 67, 68, 69, 70, 71,
+		72, 73, 74, 75, 76, 77, 78, 79,
+		80, 81, 82, 83, 84, 85, 86, 87,
+		88, 89, 90, 91, 92, 93, 94, 95,
+		96, 97, 98, 99, 100, 101, 102, 103,
+		104, 105, 106, 107, 108, 109, 110, 111,
+		112, 113, 114, 115, 116, 117, 118, 119,
+		120, 121, 122, 123, 124, 125, 126, 127},
+	.oobavail = 62,
+	.oobfree = {
+		{.offset = 2,
+		 .length = 62}, }
+};
+
+
 /**
  * spinand_cmd - to process a command to send to the SPI Nand
  * 
@@ -63,6 +86,10 @@ static struct nand_ecclayout spinand_oob_64 = {
  */
 int spinand_cmd(struct spi_device *spi, struct spinand_cmd *cmd)
 {
+
+    #ifdef DEBUG_PRINT_JACOBW_ADD
+        printk("\n\rSPINAND_LLD: %s", __func__);
+    #endif
 	int					ret;
 	struct spi_message	message;
 	struct spi_transfer		x[4];
@@ -117,6 +144,9 @@ int spinand_cmd(struct spi_device *spi, struct spinand_cmd *cmd)
  */
 static int spinand_reset(struct spi_device *spi_nand)
 {
+    #ifdef DEBUG_PRINT_JACOBW_ADD
+        printk("\n\rSPINAND_LLD: %s", __func__);
+    #endif
 	struct spinand_cmd cmd = {0};
 
 	cmd.cmd = CMD_RESET;
@@ -131,6 +161,9 @@ static int spinand_reset(struct spi_device *spi_nand)
  */
 static int spinand_read_id(struct spi_device *spi_nand, u8 *id)
 {
+    #ifdef DEBUG_PRINT_JACOBW_ADD
+        printk("\n\rSPINAND_LLD: %s", __func__);
+    #endif
 	struct spinand_cmd cmd = {0};
 	ssize_t retval;
 
@@ -160,6 +193,9 @@ static int spinand_read_id(struct spi_device *spi_nand, u8 *id)
  */
 static int spinand_lock_block(struct spi_device *spi_nand, struct spinand_info *info, u8 lock)
 {
+    #ifdef DEBUG_PRINT_JACOBW_ADD
+        printk("\n\rSPINAND_LLD: %s", __func__);
+    #endif
 	struct spinand_cmd cmd = {0};
 	ssize_t retval;
 	
@@ -190,6 +226,9 @@ static int spinand_lock_block(struct spi_device *spi_nand, struct spinand_info *
  */
 static int spinand_read_status(struct spi_device *spi_nand, struct spinand_info *info, u8 *status)
 {
+    #ifdef DEBUG_PRINT_JACOBW_ADD
+        printk("\n\rSPINAND_LLD: %s", __func__);
+    #endif
 	struct spinand_cmd cmd = {0};
 	ssize_t retval;
 	
@@ -220,6 +259,9 @@ static int spinand_read_status(struct spi_device *spi_nand, struct spinand_info 
  */
 static int spinand_get_otp(struct spi_device *spi_nand, struct spinand_info *info, u8* otp)
 {
+    #ifdef DEBUG_PRINT_JACOBW_ADD
+        printk("\n\rSPINAND_LLD: %s", __func__);
+    #endif
 	struct spinand_cmd cmd = {0};
 	ssize_t retval;
 	
@@ -251,6 +293,9 @@ static int spinand_get_otp(struct spi_device *spi_nand, struct spinand_info *inf
  */
 static int spinand_set_otp(struct spi_device *spi_nand, struct spinand_info *info, u8* otp)
 {
+    #ifdef DEBUG_PRINT_JACOBW_ADD
+        printk("\n\rSPINAND_LLD: %s", __func__);
+    #endif
 	struct spinand_cmd cmd = {0};
 	ssize_t retval;
 	
@@ -281,6 +326,9 @@ static int spinand_set_otp(struct spi_device *spi_nand, struct spinand_info *inf
  */
 static int spinand_enable_ecc(struct spi_device *spi_nand, struct spinand_info *info)
 {
+    #ifdef DEBUG_PRINT_JACOBW_ADD
+        printk("\n\rSPINAND_LLD: %s", __func__);
+    #endif
 	ssize_t retval;
 	u8 otp = 0;
 	
@@ -301,6 +349,9 @@ static int spinand_enable_ecc(struct spi_device *spi_nand, struct spinand_info *
 
 static int spinand_disable_ecc(struct spi_device *spi_nand, struct spinand_info *info)
 {
+    #ifdef DEBUG_PRINT_JACOBW_ADD
+        printk("\n\rSPINAND_LLD: %s", __func__);
+    #endif
 	ssize_t retval;
 	u8 otp = 0;
 	
@@ -321,7 +372,7 @@ static int spinand_disable_ecc(struct spi_device *spi_nand, struct spinand_info 
 }
 
 /**
- * sspinand_write_enable- send command 0x06 to enable write or erase the Nand cells
+ * spinand_write_enable- send command 0x06 to enable write or erase the Nand cells
  * 
  * Description:
  *   Before write and erase the Nand cells, the write enable has to be set.
@@ -330,6 +381,9 @@ static int spinand_disable_ecc(struct spi_device *spi_nand, struct spinand_info 
  */
 static int spinand_write_enable(struct spi_device *spi_nand, struct spinand_info *info)
 {
+    #ifdef DEBUG_PRINT_JACOBW_ADD
+        printk("\n\rSPINAND_LLD: %s", __func__);
+    #endif
 	struct spinand_cmd cmd = {0};
 
 	cmd.cmd = CMD_WR_ENABLE;
@@ -339,6 +393,9 @@ static int spinand_write_enable(struct spi_device *spi_nand, struct spinand_info
 
 static int spinand_read_page_to_cache(struct spi_device *spi_nand, struct spinand_info *info, u16 page_id)
 {
+    #ifdef DEBUG_PRINT_JACOBW_ADD
+        printk("\n\rSPINAND_LLD: %s", __func__);
+    #endif
 	struct spinand_cmd cmd = {0};
 	u16 row;
 
@@ -353,7 +410,7 @@ static int spinand_read_page_to_cache(struct spi_device *spi_nand, struct spinan
 }
 
 /**
- * spinand_read_from_cache- send command 0x03 to read out the data from the cache register( 2112 bytes max )
+ * spinand_read_from_cache- send command 0x03 to read out the data from the cache register( 2176 bytes max )
  * 
  * Description:
  *   The read can specify 1 to 2112 bytes of data read at the coresponded locations.
@@ -361,6 +418,9 @@ static int spinand_read_page_to_cache(struct spi_device *spi_nand, struct spinan
  */
 static int spinand_read_from_cache(struct spi_device *spi_nand, struct spinand_info *info, u16 byte_id, u16 len, u8* rbuf)
 {
+    #ifdef DEBUG_PRINT_JACOBW_ADD
+        printk("\n\rSPINAND_LLD: %s", __func__);
+    #endif
 	struct spinand_cmd cmd = {0};
 	u16 column;
 
@@ -390,13 +450,17 @@ static int spinand_read_from_cache(struct spi_device *spi_nand, struct spinand_i
  */
 static int spinand_read_page(struct spi_device *spi_nand, struct spinand_info *info, u16 page_id, u16 offset, u16 len, u8* rbuf)
 {
+    #ifdef DEBUG_PRINT_JACOBW_ADD
+        printk("\n\rSPINAND_LLD: %s", __func__);
+    #endif
 	ssize_t retval;
 	u8 status = 0;
 	
+    // read the page into the cache
 	retval = spinand_read_page_to_cache(spi_nand, info, page_id);
 
 	while (1)
-	{
+	{   // wait for the page to arrive in the cache
 		retval = spinand_read_status(spi_nand, info, &status);
 		if (retval<0) {
 			dev_err(&spi_nand->dev, "error %d reading status register\n",
@@ -417,8 +481,31 @@ static int spinand_read_page(struct spi_device *spi_nand, struct spinand_info *i
 			break;
 		}
 	}
-
+    
+    // read the data out from the cache over spi
 	retval = spinand_read_from_cache(spi_nand, info, offset, len, rbuf);
+
+#ifdef DEBUG_PRINT_JACOBW_ADD
+        // print raw data from rbuf to terminal
+    if(page_id < 4){
+        printk("\n\rSPINAND_LLD: spinand_read_data");
+        printk("\n\r\tData read of page %d: length: %d", page_id, len);
+        int i;
+        printk("\n\r%.6d:\t ",0); // new line and tab out one
+        for(i=0; i < len; i++){
+            if(i != 0 && i%32 == 0){
+                printk("\n\r%.6d:\t",i); // newline every 32 bytes
+            }
+            if(i !=0 && i%8 == 0){
+                printk(" ");
+            }
+            printk("%.2x ", rbuf[i]);
+
+        }
+        printk("\n\r");
+    }
+#endif
+
 	return 0;
 		
 }
@@ -435,6 +522,9 @@ static int spinand_read_page(struct spi_device *spi_nand, struct spinand_info *i
  */
 static int spinand_program_data_to_cache(struct spi_device *spi_nand, struct spinand_info *info, u16 byte_id, u16 len, u8* wbuf)
 {
+    #ifdef DEBUG_PRINT_JACOBW_ADD
+        printk("\n\rSPINAND_LLD: %s", __func__);
+    #endif
 	struct spinand_cmd cmd = {0};
 	u16 column;
 
@@ -460,6 +550,9 @@ static int spinand_program_data_to_cache(struct spi_device *spi_nand, struct spi
  */
 static int spinand_program_execute(struct spi_device *spi_nand, struct spinand_info *info, u16 page_id)
 {
+    #ifdef DEBUG_PRINT_JACOBW_ADD
+        printk("\n\rSPINAND_LLD: %s", __func__);
+    #endif
 	struct spinand_cmd cmd = {0};
 	u16 row;
 
@@ -487,6 +580,9 @@ static int spinand_program_execute(struct spi_device *spi_nand, struct spinand_i
  */
 static int spinand_program_page(struct spi_device *spi_nand, struct spinand_info *info, u16 page_id, u16 offset, u16 len, u8* wbuf)
 {
+    #ifdef DEBUG_PRINT_JACOBW_ADD
+        printk("\n\rSPINAND_LLD: %s", __func__);
+    #endif
 	ssize_t retval;
 	u8 status = 0;
 
@@ -494,8 +590,30 @@ static int spinand_program_page(struct spi_device *spi_nand, struct spinand_info
 	
 	retval = spinand_program_data_to_cache(spi_nand, info, offset, len, wbuf);
 
+#ifdef DEBUG_PRINT_JACOBW_ADD
+    if(page_id < 4){
+        printk("\n\rSPINAND_LLD: spinand_program_data_to_cache");
+        printk("\n\r\tData to be programmed to page %d: length: %d", page_id, len);
+        int i;
+        printk("\n\r%.6d:\t ",0); // new line and tab out one
+        for(i=0; i < len; i++){
+            if(i != 0 && i%32 == 0){
+                printk("\n\r%.6d:\t",i); // newline every 32 bytes
+            }
+            if(i !=0 && i%8 == 0){
+                printk(" ");
+            }
+            printk("%.2x ", wbuf[i]);
+
+        }
+        printk("\n\r");
+    }
+#endif
+
 	retval = spinand_program_execute(spi_nand, info, page_id);
 
+    // wait for the page program to complete, tPROG time
+    // poll status register to determine when done
 	while (1)
 	{
 		retval = spinand_read_status(spi_nand, info, &status);
@@ -531,6 +649,9 @@ static int spinand_program_page(struct spi_device *spi_nand, struct spinand_info
  */
 static int spinand_erase_block_erase(struct spi_device *spi_nand, struct spinand_info *info, u16 block_id)
 {
+    #ifdef DEBUG_PRINT_JACOBW_ADD
+        printk("\n\rSPINAND_LLD: %s", __func__);
+    #endif
 	struct spinand_cmd cmd = {0};
 	u16 row;
 
@@ -554,6 +675,9 @@ static int spinand_erase_block_erase(struct spi_device *spi_nand, struct spinand
  */
 static int spinand_erase_block(struct spi_device *spi_nand, struct spinand_info *info, u16 block_id)
 {
+    #ifdef DEBUG_PRINT_JACOBW_ADD
+        printk("\n\rSPINAND_LLD: %s", __func__);
+    #endif
 	ssize_t retval;
 	u8 status= 0;
 
@@ -593,29 +717,32 @@ static int spinand_erase_block(struct spi_device *spi_nand, struct spinand_info 
  */
 static int spinand_get_info(struct spi_device *spi_nand, struct spinand_info *info, u8* id)
 {
+    #ifdef DEBUG_PRINT_JACOBW_ADD
+        printk("\n\rSPINAND_LLD: %s", __func__);
+    #endif
 	if (id[0]==0x2C && (id[1]==0x11 || id[1]==0x12 || id[1]==0x13 || id[1] == 0x36))
 	{
 		/* FIX SIZES AND SUCH HERE: TODO */
 		info->mid = id[0];
 		info->did = id[1];
-		info->name = "MT29F1G01ZAC";
-		info->nand_size = (1024 * 64 * 2112);
-		info->usable_size = (1024 * 64 * 2048);
-		info->block_size = (2112*64);
+		info->name = "MT29F4G01ADAGDXX";
+		info->nand_size = (4096 * 64 * 2176);
+		info->usable_size = (4096 * 64 * 2048);
+		info->block_size = (2176*64);
 		info->block_main_size = (2048*64);
-		info->block_num_per_chip = 1024;
-		info->page_size = 2112;
+		info->block_num_per_chip = 4096;
+		info->page_size = 2176;
 		info->page_main_size = 2048;
-		info->page_spare_size = 64;
+		info->page_spare_size = 128;
 		info->page_num_per_block = 64;
 
-		info->block_shift = 17;
-		info->block_mask = 0x1ffff;
+		info->block_shift = 17;     // used to get the block number on the device
+		info->block_mask = 0x1ffff; // used to get the lower bits (page number and position on page)
 
-		info->page_shift = 11;
-		info->page_mask = 0x7ff;
+		info->page_shift = 11;     // 2^(info->page_shift) = number of bytes on a page, used to get a page number in the device
+		info->page_mask = 0x7ff;   // 11 ones, used to get the position on a page 
 		
-		info->ecclayout = &spinand_oob_64;
+		info->ecclayout = &spinand_oob_128;
 	}	
 	return 0;
 }
@@ -629,6 +756,9 @@ static int spinand_get_info(struct spi_device *spi_nand, struct spinand_info *in
  */
 static int __devinit spinand_probe(struct spi_device *spi_nand)
 {
+    #ifdef DEBUG_PRINT_JACOBW_ADD
+        printk("\n\rSPINAND_LLD: %s", __func__);
+    #endif
 	ssize_t retval;
 	struct mtd_info *mtd;
 	struct spinand_chip *chip; 
@@ -649,7 +779,6 @@ static int __devinit spinand_probe(struct spi_device *spi_nand)
 		return -ENOMEM;
 	
 	retval = spinand_get_info(spi_nand, info, (u8*)&id);
-	printk(KERN_INFO "SPINAND: 0x%02x, 0x%02x, %s\n", id[0], id[1], info->name); 
 	printk(KERN_INFO "%s\n", mu_spi_nand_driver_version);
 	retval = spinand_lock_block(spi_nand, info, BL_ALL_UNLOCKED);
 
@@ -702,6 +831,9 @@ static int __devinit spinand_probe(struct spi_device *spi_nand)
  */
 static int __devexit spinand_remove(struct spi_device *spi)
 {
+    #ifdef DEBUG_PRINT_JACOBW_ADD
+        printk("\n\rSPINAND_LLD: %s", __func__);
+    #endif
 	struct mtd_info *mtd;
 	struct spinand_chip *chip; 
 
@@ -726,6 +858,7 @@ static int __devexit spinand_remove(struct spi_device *spi)
  * Device name structure description
 */
 static struct spi_driver spinand_driver = {
+
 	.driver = {
 		.name		= "spi_nand",
 		.bus		= &spi_bus_type,
@@ -741,6 +874,9 @@ static struct spi_driver spinand_driver = {
 */
 static int __init spinand_init(void)
 {
+    #ifdef DEBUG_PRINT_JACOBW_ADD
+        printk("\n\rSPINAND_LLD: %s", __func__);
+    #endif
 	return spi_register_driver(&spinand_driver);
 }
 
@@ -749,6 +885,9 @@ static int __init spinand_init(void)
 */
 static void __exit spinand_exit(void)
 {
+    #ifdef DEBUG_PRINT_JACOBW_ADD
+        printk("\n\rSPINAND_LLD: %s", __func__);
+    #endif
 	spi_unregister_driver(&spinand_driver);
 }
 

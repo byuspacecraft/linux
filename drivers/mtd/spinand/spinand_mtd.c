@@ -28,6 +28,9 @@ GNU General Public License for more details.
 #include <linux/mtd/spinand.h>
 #include <linux/mtd/nand_ecc.h>
 
+//#define DEBUG_PRINT_JACOBW_ADD // enable debug print statements added by jacob willis
+//#define DEBUG_PRINT_JACOBW_ADD_READ_WRITE // enable debug print statements added by jacob willis
+
 /**
  * spinand_get_device - [GENERIC] Get chip for selected access
  * @param mtd		MTD device structure
@@ -38,6 +41,10 @@ GNU General Public License for more details.
 #define mu_spi_nand_driver_version "Beagle-MTD_01.00_Linux2.6.33_20100507"
 static int spinand_get_device(struct mtd_info *mtd, int new_state)
 {
+    #ifdef DEBUG_PRINT_JACOBW_ADD
+        printk("\n\rSPINAND_MTD: %s", __func__);
+    #endif
+
 	struct spinand_chip *this = mtd->priv;
 	DECLARE_WAITQUEUE(wait, current);
 
@@ -72,6 +79,9 @@ static int spinand_get_device(struct mtd_info *mtd, int new_state)
  */
 static void spinand_release_device(struct mtd_info *mtd)
 {
+    #ifdef DEBUG_PRINT_JACOBW_ADD
+        printk("\n\rSPINAND_MTD: %s", __func__);
+    #endif
 	struct spinand_chip *this = mtd->priv;
 
 	/* Release the chip */
@@ -84,6 +94,9 @@ static void spinand_release_device(struct mtd_info *mtd)
 #ifdef CONFIG_MTD_SPINAND_SWECC 
 static void spinand_calculate_ecc(struct mtd_info *mtd)
 {
+    #ifdef DEBUG_PRINT_JACOBW_ADD
+        printk("\n\rSPINAND_MTD: %s", __func__);
+    #endif
 	int i; 
 	int eccsize = 512;
 	int eccbytes = 3;
@@ -102,6 +115,9 @@ static void spinand_calculate_ecc(struct mtd_info *mtd)
 
 static int spinand_correct_data(struct mtd_info *mtd)
 {
+    #ifdef DEBUG_PRINT_JACOBW_ADD
+        printk("\n\rSPINAND_MTD: %s", __func__);
+    #endif
 	int i; 
 	int eccsize = 512;
 	int eccbytes = 3;
@@ -140,6 +156,9 @@ static int spinand_correct_data(struct mtd_info *mtd)
 static int spinand_read_ops(struct mtd_info *mtd, loff_t from,
 			  struct mtd_oob_ops *ops)
 {
+    #ifdef DEBUG_PRINT_JACOBW_ADD
+        printk("\n\rSPINAND_MTD: %s", __func__);
+    #endif
 	struct spinand_chip *chip = mtd->priv;
 	struct spi_device *spi_nand = chip->spi_nand;
 	struct spinand_info *info = chip->info;
@@ -155,20 +174,27 @@ static int spinand_read_ops(struct mtd_info *mtd, loff_t from,
 	if (!chip->buf)
 		return -1;
 
-	page_id = from >> info->page_shift;
+    // use from to determine what page we start on
+    // 2^(info->page_shift) = number of bytes on a page,
+    // so that means from >> info->page_shift gives the page
+    // number within the device
+	page_id = from >> info->page_shift; 
 
 	/* for main data */
-	page_offset = from & info->page_mask;
+	page_offset = from & info->page_mask; // position to start on the page is held in lower bits of from
+
+    // page_num = the total number of pages that are to be read
 	page_num = (page_offset + ops->len + info->page_main_size -1 ) / info->page_main_size;
 
 	/* for oob */
 	oob_num = (ops->ooblen + info->ecclayout->oobavail -1) / info->ecclayout->oobavail;
-
+    
+    // count is the number of pages we have read from
 	count = 0;
 
-	main_left = ops->len;
-	main_ok = 0;
-	main_offset = page_offset;
+	main_left = ops->len; // amount of data left to be read
+	main_ok = 0; // amount of data that has been read
+	main_offset = page_offset; // starting point on the first page is assigned to main offset
 
 	oob_left = ops->ooblen;
 	oob_ok = 0;
@@ -177,8 +203,29 @@ static int spinand_read_ops(struct mtd_info *mtd, loff_t from,
 	{
 		if (count < page_num || count < oob_num) 
 		{
-			memset(chip->buf, 0, info->page_size); 
-			retval = chip->read_page(spi_nand, info, page_id + count, 0, info->page_size, chip->buf);
+			memset(chip->buf, 0, info->page_size); // assign 0s to chip->buf to clear it prior to reading
+            // read page into chip->buf, page number determined by page_id+count
+			retval = chip->read_page(spi_nand, info, page_id + count, 0, info->page_size, chip->buf); 
+#ifdef DEBUG_PRINT_JACOBW_ADD
+                // print raw data from chip->buf to terminal
+            if(page_id+count < 2){
+                printk("\n\rSPINAND_MTD: spinand_read_ops");
+                printk("\n\r\tData read of page %d: length: %d", page_id+count, info->page_size);
+                int i;
+                printk("\n\r%.6d:\t ",0); // new line and tab out one
+                for(i=0; i < info->page_size; i++){
+                    if(i != 0 && i%32 == 0){
+                        printk("\n\r%.6d:\t",i); // newline every 32 bytes
+                    }
+                    if(i !=0 && i%8 == 0){
+                        printk(" ");
+                    }
+                    printk("%.2x ", chip->buf[i]);
+                }
+                printk("\n\r");
+            }
+#endif
+            // read failed, return and report failure
 			if (retval != 0)
 			{
 				errcode = -1;
@@ -187,7 +234,7 @@ static int spinand_read_ops(struct mtd_info *mtd, loff_t from,
 				return errcode;
 			}
 		}
-		else
+		else // no more data to read from the device
 		{
 			break;
 		}
@@ -204,20 +251,32 @@ static int spinand_read_ops(struct mtd_info *mtd, loff_t from,
 				printk(KERN_INFO "SWECC 1 bit error, corrected! page=%x\n", page_id+count); 
 
 #endif
+         // copy data from chip->buf into ops->datbuf
+         // chip->buf contains full pages, so this is where we segment pages if only
+         // a portion of the page was requested, or if the length doesn't fall on a 
+         // page boundary
 
+
+            // if we are on the last page, the size of the data to copy into ops->dat 
+            // is main_left
 			if ((main_offset + main_left) < info->page_main_size)
 			{
 				size = main_left;
 			}
+            // main_offset is 0, unless on the first page, so size should be the 
+            // size of the page minus any offset.
 			else
 			{
 				size = info->page_main_size - main_offset;
 			}
 			
-			memcpy (ops->datbuf + main_ok, chip->buf, size);
+            // copy the data from the most recent pass into datbuf
+            // add main_ok to datbuf to make sure data is saved at its proper location
+            // add main_offset to chip->buf to account for starting in the middle of the page
+			memcpy (ops->datbuf + main_ok, chip->buf + main_offset, size);
 
 			main_ok += size;
-			main_left -= size;
+			main_left -= size; // we have read size data, so 
 			main_offset = 0;
 
 			ops->retlen = main_ok;
@@ -277,6 +336,9 @@ static int spinand_read_ops(struct mtd_info *mtd, loff_t from,
 static int spinand_write_ops(struct mtd_info *mtd, loff_t to,
 			  struct mtd_oob_ops *ops)
 {
+    #ifdef DEBUG_PRINT_JACOBW_ADD
+        printk("\n\rSPINAND_MTD: %s", __func__);
+    #endif
 	struct spinand_chip *chip = mtd->priv;
 	struct spi_device *spi_nand = chip->spi_nand;
 	struct spinand_info *info = chip->info;
@@ -313,6 +375,10 @@ static int spinand_write_ops(struct mtd_info *mtd, loff_t to,
 
 	while (1)
 	{
+
+#ifdef DEBUG_PRINT_JACOBW_ADD
+    printk("\n\rSPINAND_MTD: spinand_write_ops - page_num = %d, oob_num = %d, count = %d", page_num, oob_num, count);
+#endif
 		if (count < page_num || count < oob_num) 
 		{
 			memset(chip->buf, 0xFF, info->page_size); 
@@ -443,6 +509,24 @@ static int spinand_read(struct mtd_info *mtd, loff_t from, size_t len,
  	*retlen = ops.retlen;
 
 	spinand_release_device(mtd);
+    
+    #ifdef DEBUG_PRINT_JACOBW_ADD_READ_WRITE
+                // print raw data from chip->buf to terminal
+                printk("\n\rSPINAND_MTD: spinand_read");
+                printk("\n\r\tData read length: %d, from: %d", len, from);
+                int i;
+                printk("\n\r%.6d:\t ",0); // new line and tab out one
+                for(i=0; i < len && i < 2048; i++){
+                    if(i != 0 && i%32 == 0){
+                        printk("\n\r%.6d:\t",i); // newline every 32 bytes
+                    }
+                    if(i !=0 && i%8 == 0){
+                        printk(" ");
+                    }
+                    printk("%.2x ", buf[i]); // print out the data in buf
+                }
+                printk("\n\r");
+#endif
 
 	return ret;
 }
@@ -450,6 +534,27 @@ static int spinand_read(struct mtd_info *mtd, loff_t from, size_t len,
 static int spinand_write(struct mtd_info *mtd, loff_t to, size_t len,
 	size_t *retlen, const u_char *buf)
 {
+    #ifdef DEBUG_PRINT_JACOBW_ADD
+        printk("\n\rSPINAND_MTD: %s", __func__);
+    #endif
+
+#ifdef DEBUG_PRINT_JACOBW_ADD_READ_WRITE
+                // print raw data from chip->buf to terminal
+                printk("\n\rSPINAND_MTD: spinand_write");
+                printk("\n\r\tData write length: %d", len);
+                int i;
+                printk("\n\r%.6d:\t ",0); // new line and tab out one
+                for(i=0; i < len && i < 2048; i++){
+                    if(i != 0 && i%32 == 0){
+                        printk("\n\r%.6d:\t",i); // newline every 32 bytes
+                    }
+                    if(i !=0 && i%8 == 0){
+                        printk(" ");
+                    }
+                    printk("%.2x ", buf[i]); // print out the data in buf
+                }
+                printk("\n\r");
+#endif
 	struct mtd_oob_ops ops = {0};
 	int ret;
 	
@@ -510,6 +615,9 @@ static int spinand_write_oob(struct mtd_info *mtd, loff_t to,
  */
 static int spinand_erase(struct mtd_info *mtd, struct erase_info *instr)
 {
+    #ifdef DEBUG_PRINT_JACOBW_ADD
+        printk("\n\rSPINAND_MTD: %s", __func__);
+    #endif
 	struct spinand_chip *chip = mtd->priv;
 	struct spi_device *spi_nand = chip->spi_nand;
 	struct spinand_info *info = chip->info;
@@ -588,6 +696,9 @@ static int spinand_erase(struct mtd_info *mtd, struct erase_info *instr)
  */
 static void spinand_sync(struct mtd_info *mtd)
 {
+    #ifdef DEBUG_PRINT_JACOBW_ADD
+        printk("\n\rSPINAND_MTD: %s", __func__);
+    #endif
 	DEBUG(MTD_DEBUG_LEVEL3, "spinand_sync: called\n");
 
 	/* Grab the lock and see if the device is available */
@@ -599,6 +710,9 @@ static void spinand_sync(struct mtd_info *mtd)
 
 static int spinand_block_isbad(struct mtd_info *mtd, loff_t ofs)
 {
+    #ifdef DEBUG_PRINT_JACOBW_ADD
+        printk("\n\rSPINAND_MTD: %s", __func__);
+    #endif
 	struct spinand_chip *chip = mtd->priv;
 	struct spi_device *spi_nand = chip->spi_nand;
 	struct spinand_info *info = chip->info;
@@ -629,6 +743,9 @@ static int spinand_block_isbad(struct mtd_info *mtd, loff_t ofs)
  */
 static int spinand_block_markbad(struct mtd_info *mtd, loff_t ofs)
 {
+    #ifdef DEBUG_PRINT_JACOBW_ADD
+        printk("\n\rSPINAND_MTD: %s", __func__);
+    #endif
 	struct spinand_chip *chip = mtd->priv;
 	struct spi_device *spi_nand = chip->spi_nand;
 	struct spinand_info *info = chip->info;
@@ -654,6 +771,9 @@ static int spinand_block_markbad(struct mtd_info *mtd, loff_t ofs)
  */
 static int spinand_suspend(struct mtd_info *mtd)
 {
+    #ifdef DEBUG_PRINT_JACOBW_ADD
+        printk("\n\rSPINAND_MTD: %s", __func__);
+    #endif
 	return spinand_get_device(mtd, FL_PM_SUSPENDED);
 }
 
@@ -663,6 +783,9 @@ static int spinand_suspend(struct mtd_info *mtd)
  */
 static void spinand_resume(struct mtd_info *mtd)
 {
+    #ifdef DEBUG_PRINT_JACOBW_ADD
+        printk("SPINAND_MNT: %s\n\r", __func__);
+    #endif
 	struct spinand_chip *this = mtd->priv;
 
 	if (this->state == FL_PM_SUSPENDED)
@@ -680,6 +803,9 @@ static void spinand_resume(struct mtd_info *mtd)
  */
 int spinand_mtd(struct mtd_info *mtd)
 {
+    #ifdef DEBUG_PRINT_JACOBW_ADD
+        printk("\n\rSPINAND_MTD: %s", __func__);
+    #endif
 	struct spinand_chip *chip = mtd->priv;
 	struct spinand_info *info = chip->info;
 
@@ -718,6 +844,9 @@ int spinand_mtd(struct mtd_info *mtd)
 
 void spinand_mtd_release(struct mtd_info *mtd)
 {
+    #ifdef DEBUG_PRINT_JACOBW_ADD
+        printk("\n\rSPINAND_MTD: %s", __func__);
+    #endif
 	del_mtd_device(mtd);
 }
 
