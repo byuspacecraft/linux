@@ -24,6 +24,7 @@ GNU General Public License for more details.
 #include <linux/mtd/mtd.h>
 
 /* cmd */
+// Commands for spi nand, first byte of a transaction
 #define CMD_READ				0x13
 #define CMD_READ_RDM			0x03
 #define CMD_PROG_PAGE_CLRCACHE	0x02
@@ -32,15 +33,20 @@ GNU General Public License for more details.
 #define CMD_ERASE_BLK			0xd8
 #define CMD_WR_ENABLE			0x06
 #define CMD_WR_DISABLE			0x04
-#define CMD_READ_ID			0x9f
+#define CMD_READ_ID			    0x9f
 #define CMD_RESET				0xff
-#define CMD_READ_REG			0x0f
-#define CMD_WRITE_REG			0x1f
+#define CMD_GET_FEATURES	    0x0f
+#define CMD_SET_FEATURES		0x1f
 
 /* feature/ status reg */
 #define REG_BLOCK_LOCK		0xa0
 #define REG_OTP				0xb0
 #define REG_STATUS			0xc0/* timing */
+#define REG_DIE_SEL         0xD0    // die select address to be byte after set features command
+
+/* die select */
+#define DIE_SEL_DIE0        0x00    // write to die select register for die 0 (addresses <256MB)
+#define DIE_SEL_DIE1        0x40    // write to die select register for die 1 (addresses >256MB)
 
 /* status */
 #define STATUS_OIP_MASK		0x01
@@ -100,8 +106,11 @@ struct spinand_info {
 	u8		block_shift;
 	u32		block_mask;
 
-	u8		page_shift;
-	u16		page_mask;
+	u8		page_shift; // shift to get page address from byte address log2(bytes in page)
+	u16		page_mask;  // mask out all other bits to get the address within a page
+    
+    u8      die_select_shift; // amount to shift to get die select (most significant) bit
+    u8      has_die_select; // Non-zero if it has die select, zero if it doesn't
 
 	struct nand_ecclayout *ecclayout;
 };
@@ -131,6 +140,9 @@ struct spinand_chip { /* used for multi chip */
 	int (*read_page) (struct spi_device *spi_nand, struct spinand_info *info, u16 page_id, u16 offset, u16 len, u8* rbuf);
 	int (*program_page) (struct spi_device *spi_nand, struct spinand_info *info, u16 page_id, u16 offset, u16 len, u8* wbuf);
 	int (*erase_block) (struct spi_device *spi_nand, struct spinand_info *info, u16 block_id);
+    
+    // die select function, as it is called from spinand_mtd and uses functions in spinand_lld
+    int (*die_select) (struct spi_device *spi_nand, u8 die_bit);
 
 	u8 *buf;
 	u8 *oobbuf; /* temp buffer */

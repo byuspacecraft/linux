@@ -182,7 +182,13 @@ static int spinand_read_ops(struct mtd_info *mtd, loff_t from,
 
 	/* for main data */
 	page_offset = from & info->page_mask; // position to start on the page is held in lower bits of from
-
+    printk("\n\rSPINAND_MTD: spinand_read_ops from = 0x%llx, page_id = %d", from, page_id);
+    // Determine which die we should start on
+    u8 db_start = ((u8)(from >> info->die_select_shift)) & 0x01; // get the topmost bit of from    
+    if(info->has_die_select){   // check if this device has die select
+      chip->die_select(spi_nand, db_start); // set the appropriate die bit.
+    } 
+    
     // page_num = the total number of pages that are to be read
 	page_num = (page_offset + ops->len + info->page_main_size -1 ) / info->page_main_size;
 
@@ -329,6 +335,16 @@ static int spinand_read_ops(struct mtd_info *mtd, loff_t from,
 		}
 
 		count++;
+       
+        // check that we haven't crossed the die boundary 
+        u8 db_temp; // temp variable to store new die bit in
+        // count+page_id is the next page we will be on
+        if (db_start != (db_temp = ((count+page_id)>>(info->die_select_shift - info->page_shift))&0x01)){
+            // crossed die boundary
+            if(info->has_die_select){   // check if this device has die select
+                chip->die_select(spi_nand, db_temp); // set the appropriate die bit.
+            }                 
+        }
 	}
 	return errcode;
 }
@@ -355,11 +371,20 @@ static int spinand_write_ops(struct mtd_info *mtd, loff_t to,
 	if (!chip->buf)
 		return -1;
 
-	page_id = to >> info->page_shift;
+	page_id = to >> info->page_shift; // location of first page
 
 	/* for main data */
 	page_offset = to & info->page_mask;
 	page_num = (page_offset + ops->len + info->page_main_size -1 ) / info->page_main_size;
+
+    printk("\n\rSPINAND_MTD: spinand_write_ops to = 0x%llx, page_id = %d", to, page_id);
+    // Determine which die we should start on
+    u8 db_start = ((u8)(to >> info->die_select_shift)) & 0x01; // get the topmost bit of to
+    
+    
+    if(info->has_die_select){   // check if this device has die select
+      chip->die_select(spi_nand, db_start); // set the appropriate die bit.
+    } 
 
 	/* for oob */
 	oob_num = (ops->ooblen + info->ecclayout->oobavail -1) / info->ecclayout->oobavail;
@@ -463,7 +488,7 @@ static int spinand_write_ops(struct mtd_info *mtd, loff_t to,
 			if (retval != 0)
 			{
 				errcode = -1;
-				printk(KERN_INFO "spinand_write_ops: fail, page=%d!\n", page_id);
+				printk(KERN_INFO "spinand_write_ops: fail, page=%d!\n", page_id + count);
 
 				return errcode;
 			}
@@ -480,6 +505,15 @@ static int spinand_write_ops(struct mtd_info *mtd, loff_t to,
 		}
 
 		count++;
+        
+        // check that if crossed the die boundary 
+        u8 db_temp;
+        if (db_start != (db_temp = ((count+page_id)>>(info->die_select_shift - info->page_shift))&0x01)){
+            // crossed die boundary
+            if(info->has_die_select){   // check if this device has die select
+                chip->die_select(spi_nand, db_temp); // set the appropriate die bit.
+            }                 
+        }
 
 	}
 
@@ -655,7 +689,16 @@ static int spinand_erase(struct mtd_info *mtd, struct erase_info *instr)
 
 	block_id = instr->addr >> info->block_shift;
 	block_num = instr->len >> info->block_shift; 
-	count = 0;
+
+
+    // Determine which die we should start on
+    u8 db_start = ((u8)(instr->addr >> info->die_select_shift)) & 0x01; // get the topmost bit of addr    
+    if(info->has_die_select){   // check if this device has die select
+      chip->die_select(spi_nand, db_start); // set the appropriate die bit.
+    } 
+
+
+	count = 0; // number of blocks we have done
 	
 	while (count < block_num )
 	{
@@ -671,6 +714,14 @@ static int spinand_erase(struct mtd_info *mtd, struct erase_info *instr)
 			}
 		}
 		count++;
+        // check that we haven't crossed the die boundary 
+        u8 db_temp;
+        if (db_start != (db_temp = ((count+block_id)>>(info->die_select_shift - info->block_shift))&0x01)){
+            // crossed die boundary
+            if(info->has_die_select){   // check if this device has die select
+                chip->die_select(spi_nand, db_temp); // set the appropriate die bit.
+            }                 
+        }
 	}
 	
 	if (errcode == 0)
