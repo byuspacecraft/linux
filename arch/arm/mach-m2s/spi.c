@@ -206,52 +206,36 @@ void __init m2s_spi_init(void)
 					ARRAY_SIZE(spi_flash_partitions__dongle1),
 				.type = "spi_nand",
 			};
+
+/* 512 Mb SPI flash s25fl512 */
+
+			#		define FLASH_SIZE_S25FL512	(256*1024*256)
+					static struct mtd_partition
+						spi_flash_partitions__s25fl512[] = {
+							{
+								.name = "s25fl512_part0",
+								.size = FLASH_SIZE_S25FL512,
+								.offset = 0,
+							},
+						};
+			/*
+			 * SPI Flash data for the 512 Mb SPI flash s25fl512
+			 */
+			static struct flash_platform_data
+				spi_flash_data__s25fl512 = {
+					.name = "s25fl512",
+					.parts =  spi_flash_partitions__s25fl512,
+					.nr_parts =
+						ARRAY_SIZE(spi_flash_partitions__s25fl512),
+					.type = "s25fl512s",
+				};
 #endif
 
-#if defined(CONFIG_M2S_MSS_SPI1) && \
-		(defined(CONFIG_MTD_M25P80) || defined(CONFIG_SPI_SPIDEV))
-
-#if !defined(CONFIG_SPI_SPIDEV)
-
-		/*
-		 * SPI Flash partitioning for
-		 * the second on-dongle SPI Flash (SPI1, CS1):
-		 */
-#		define FLASH_PART1_OFFSET__DONGLE2	(1024 * 1024 * 1)
-#		define FLASH_SIZE__DONGLE2		(1024 * 1024 * 4)
-		static struct mtd_partition
-			spi_flash_partitions__dongle2[] = {
-				{
-					.name = "dongle2_part0",
-					.size = FLASH_PART1_OFFSET__DONGLE2,
-					.offset = 0,
-				},
-				{
-					.name = "dongle2_part1",
-					.size = FLASH_SIZE__DONGLE2 -
-						FLASH_PART1_OFFSET__DONGLE2,
-					.offset = FLASH_PART1_OFFSET__DONGLE2,
-				},
-			};
-
-		/*
-		 * SPI Flash data for the second on-dongle Flash
-		 */
-		static struct flash_platform_data
-			spi_flash_data__dongle2 = {
-				.name = "m25p32",
-				.parts =  spi_flash_partitions__dongle2,
-				.nr_parts =
-					ARRAY_SIZE(spi_flash_partitions__dongle2),
-				.type = "m25p32",
-			};
-#endif
-#endif
 
 		/*
 		 * Array of registered SPI slaves
 		 */
-		static struct spi_board_info m2s_som_spi_board_info[] = {
+static struct spi_board_info m2s_som_spi_board_info[] = {
 
 #if defined(CONFIG_M2S_MSS_SPI0) && defined(CONFIG_MTD_M25P80)
 			/*
@@ -267,11 +251,12 @@ void __init m2s_spi_init(void)
 			},
 #endif
 
-#if defined(CONFIG_M2S_MSS_SPI1) && defined(CONFIG_SPI_SPIDEV)
+//#if defined(CONFIG_M2S_MSS_SPI1) && defined(CONFIG_SPI_SPIDEV)
 			/*
 			 * On-module SPI using SPI user-space interface
 			 * (resides at SPI1,CS0)
 			 */
+			 /*
 			{
 				.modalias = "spidev",
 				.max_speed_hz = CONFIG_SYS_M2S_SYSREF/4,
@@ -279,42 +264,49 @@ void __init m2s_spi_init(void)
 				.chip_select = 0,
 				.mode = SPI_MODE_3,
 			},
-#endif
+#endif*/
 
+// #if defined(CONFIG_M2S_MSS_SPI1) && defined(CONFIG_MTD_M25P80)
+// 			/*
+// 			 * External 4Gb Micron SPI Nand
+// 			 */
+// 			{
+// 				.modalias = "spi_nand",
+// 				.platform_data = &spi_flash_data__dongle1,
+// 				.max_speed_hz = 133000000,
+// 				.bus_num = 1,
+// 				.chip_select = 0,
+// 				.mode = SPI_MODE_3,
+// 			},
+// #endif
+
+// For S25FL512 Flash memory on EPS board REV 2
 #if defined(CONFIG_M2S_MSS_SPI1) && defined(CONFIG_MTD_M25P80)
 			/*
-			 * On-dongle SPI Flash (resides at SPI1,CS0)
+			 * s25fl512  on SPI1 SS2
 			 */
 			{
-				.modalias = "spi_nand",
-				.platform_data = &spi_flash_data__dongle1,
-				.max_speed_hz = 133000000,
+				.modalias = "m25p80",
+				.platform_data = &spi_flash_data__s25fl512,
+				.max_speed_hz = CONFIG_SYS_M2S_SYSREF/4,
 				.bus_num = 1,
-				.chip_select = 0,
+				.chip_select = 2,
 				.mode = SPI_MODE_3,
 			},
-#endif
 
-#if defined(CONFIG_M2S_MSS_SPI1) && defined(CONFIG_MTD_M25P80)
 			/*
-			 * On-dongle SPI Flash (resides at SPI1,CS1)
+			 * s25fl512  on SPI1 SS3
 			 */
 			{
-				/*
-				 * Can be accessed either as an MTD Flash
-				 * or using the SPI user-space interface
-				 */
-#if defined(CONFIG_SPI_SPIDEV)
-				.modalias = "spidev",
-#else
-				.modalias = "m25p32",
-				.platform_data = &spi_flash_data__dongle2,
-#endif
-				.max_speed_hz = 25000000,
+				.modalias = "m25p80",
+				.platform_data = &spi_flash_data__s25fl512,
+				.max_speed_hz = CONFIG_SYS_M2S_SYSREF/4,
 				.bus_num = 1,
-				.chip_select = 1,
+				.chip_select = 3,
 				.mode = SPI_MODE_3,
 			},
+
+
 #endif
 		};
 
