@@ -64,4 +64,5 @@ obj-y				+= ieee802154/
 ifeq ($(CONFIG_NET),y)
 obj-$(CONFIG_SYSCTL)		+= sysctl_net.o
 endif
-obj-$(CONFIG_WIMAX)		+= wimax/
+obj-$(CONFIG_WIMAX)		+= wimax/'
+obj-$(CONFIG_SPP) += spp/

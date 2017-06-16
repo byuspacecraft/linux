@@ -83,6 +83,8 @@
 #define ETH_P_FIP	0x8914		/* FCoE Initialization Protocol */
 #define ETH_P_EDSA	0xDADA		/* Ethertype DSA [ NOT AN OFFICIALLY REGISTERED ID ] */
 
+#define ETH_P_SPP 0x0807 /* CCSDS SPP */
+
 /*
  *	Non DIX types. Won't clash for 1500 types.
  */

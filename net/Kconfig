@@ -275,5 +275,6 @@ source "net/wimax/Kconfig"
 
 source "net/rfkill/Kconfig"
 source "net/9p/Kconfig"
+source "net/spp/Kconfig"
 
 endif   # if NET
