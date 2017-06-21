@@ -302,6 +302,7 @@ struct ucred {
 #define SOL_PNPIPE	275
 #define SOL_RDS		276
 #define SOL_IUCV	277
+#define SOL_SPP         278
 
 /* IPX options */
 #define IPX_TYPE	1
