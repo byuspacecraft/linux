@@ -375,7 +375,6 @@ static void sl_encaps(struct slip *sl, unsigned char *icp, int len)
 {
 	unsigned char *p;
 	int actual, count;
-        printk(KERN_INFO "SLIP: I'm actually about to send some stuff\n");
 	if (len > sl->mtu) {		/* Sigh, shouldn't occur BUT ... */
 		printk(KERN_WARNING "%s: truncating oversized transmit packet!\n", sl->dev->name);
 		sl->tx_dropped++;
@@ -496,7 +495,6 @@ sl_xmit(struct sk_buff *skb, struct net_device *dev)
 
 	sl_lock(sl);
 	sl->tx_bytes += skb->len;
-        printk(KERN_INFO "SLIP: sl_xmit: Socket Buffer length is: %d, and total tx_bytes is: %d\n", skb->len, sl->tx_bytes);
 	sl_encaps(sl, skb->data, skb->len);
 	spin_unlock(&sl->lock);
 
