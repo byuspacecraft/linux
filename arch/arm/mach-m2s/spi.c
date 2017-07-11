@@ -209,7 +209,7 @@ void __init m2s_spi_init(void)
 
 /* 512 Mb SPI flash s25fl512 */
 
-			#		define FLASH_SIZE_S25FL512	(256*1024*256)
+			#		define FLASH_SIZE_S25FL512	(64*1024*256) /* should be (256*1024*256) */
 					static struct mtd_partition
 						spi_flash_partitions__s25fl512[] = {
 							{
@@ -320,7 +320,7 @@ static struct spi_board_info m2s_som_spi_board_info[] = {
 	} else if (p == PLATFORM_SF2_DEV_KIT) {
 #if defined(CONFIG_M2S_MSS_SPI0) && defined(CONFIG_MTD_M25P80)
 		/*
-		 * SPI Flash partitioning:
+		 * On Board SPI Flash partitioning:
 		 * 0-ffff:		U-boot environment
 		 * 10000-3fffff:	Linux bootable image
 		 * 400000-end of Flash:	JFFS2 filesystem
@@ -330,15 +330,15 @@ static struct spi_board_info m2s_som_spi_board_info[] = {
 #		define SF2_DEV_KIT_SF_MTD_SIZE1		0x400000 /*  4 MB */
 		static struct mtd_partition sf2_dev_kit_sf_mtd[] = {
 			{
-				.name = "spi_flash_uboot_env",
+				.name = "ob_spi_flash_uboot_env",
 				.offset = 0,
 				.size = SF2_DEV_KIT_SF_MTD_OFFSET,
 			}, {
-				.name = "spi_flash_linux_image",
+				.name = "ob_spi_flash_linux_image",
 				.offset = SF2_DEV_KIT_SF_MTD_OFFSET,
 				.size = SF2_DEV_KIT_SF_MTD_SIZE0,
 			}, {
-				.name = "spi_flash_jffs2",
+				.name = "ob_spi_flash_jffs2",
 				.offset = SF2_DEV_KIT_SF_MTD_OFFSET +
 					SF2_DEV_KIT_SF_MTD_SIZE0,
 				.size = SF2_DEV_KIT_SF_MTD_SIZE1,
