@@ -28,7 +28,7 @@ GNU General Public License for more details.
 
 #include <linux/spi/spi.h>
 
-//#define DEBUG_PRINT_JACOBW_ADD // enable debug print statements added by jacob willis
+#define DEBUG_PRINT_JACOBW_ADD // enable debug print statements added by jacob willis
 
 #define mu_spi_nand_driver_version "M2S-MTD_01.00_Linux2.6.33_20100507"
 #define SPI_NAND_MICRON_DRIVER_KEY 0x1233567
@@ -136,6 +136,47 @@ int spinand_cmd(struct spi_device *spi, struct spinand_cmd *cmd)
 	return ret; 
 }
 
+
+/**
+ * spinand_die_select -
+ * 
+ * Description:
+ *     Given the msb of the read/write address, determines and selects the appropriate die.
+ *     
+ * @spi_nand - pointer to a spi_device struct for the device we will send info to
+ * @die_bit - the most significant bit of the read/write address
+ *
+ * @return - the status of the spinand_cmd transaction
+ *
+ * Example:
+ *      u8 db = (uint8_t)from >> info->die_select_shift
+ *      if(info->has_die_select){
+ *         spinand_die_select(struct spi_device *spi_nand, db);
+ *      }     
+ */
+static int spinand_die_select(struct spi_device *spi_nand, u8 die_bit){
+    #ifdef DEBUG_PRINT_JACOBW_ADD
+        printk("\n\rSPINAND_LLD: %s", __func__);
+    #endif
+
+    // determine which die to select
+    // if die_bit == 1, use die 1, if die_bit == 0, use die 0
+    u8 ds_cmd = (die_bit==0) ? DIE_SEL_DIE0 : DIE_SEL_DIE1;
+
+    //printk("\n\rSPINAND_LLD: spinand_die_select die_bit = %x, ds_cmd = %x", die_bit, ds_cmd);
+
+    // set up cmd struct for die select command
+	struct spinand_cmd cmd = {0};
+	cmd.cmd = CMD_SET_FEATURES; // use set features (0x1F) command
+    cmd.n_addr = 1; // 1 byte address after set features sent
+    cmd.addr[0] = REG_DIE_SEL; // die select address (0xD0)
+    cmd.n_tx = 1; // 1 byte to be written to address
+    cmd.tx_buf = &ds_cmd; // byte to write
+
+    return spinand_cmd(spi_nand, &cmd);    
+}
+
+
 /**
  * spinand_reset- send reset command "0xff" to the Nand device
  * 
@@ -199,7 +240,7 @@ static int spinand_lock_block(struct spi_device *spi_nand, struct spinand_info *
 	struct spinand_cmd cmd = {0};
 	ssize_t retval;
 	
-	cmd.cmd = CMD_WRITE_REG;
+	cmd.cmd = CMD_SET_FEATURES;
 	cmd.n_addr = 1;
 	cmd.addr[0] = REG_BLOCK_LOCK;
 	cmd.n_tx = 1;
@@ -232,7 +273,7 @@ static int spinand_read_status(struct spi_device *spi_nand, struct spinand_info 
 	struct spinand_cmd cmd = {0};
 	ssize_t retval;
 	
-	cmd.cmd = CMD_READ_REG;
+	cmd.cmd = CMD_GET_FEATURES;
 	cmd.n_addr = 1;
 	cmd.addr[0] = REG_STATUS;
 	cmd.n_rx = 1;
@@ -265,7 +306,7 @@ static int spinand_get_otp(struct spi_device *spi_nand, struct spinand_info *inf
 	struct spinand_cmd cmd = {0};
 	ssize_t retval;
 	
-	cmd.cmd = CMD_READ_REG;
+	cmd.cmd = CMD_GET_FEATURES;
 	cmd.n_addr = 1;
 	cmd.addr[0] = REG_OTP;
 	cmd.n_rx = 1;
@@ -299,7 +340,7 @@ static int spinand_set_otp(struct spi_device *spi_nand, struct spinand_info *inf
 	struct spinand_cmd cmd = {0};
 	ssize_t retval;
 	
-	cmd.cmd = CMD_WRITE_REG;
+	cmd.cmd = CMD_SET_FEATURES;
 	cmd.n_addr = 1;
 	cmd.addr[0] = REG_OTP;
 	cmd.n_tx = 1;
@@ -440,7 +481,7 @@ static int spinand_read_from_cache(struct spi_device *spi_nand, struct spinand_i
 /**
  * spinand_read_page-to read a page with:
  * @page_id: the physical page number
- * @offset:  the location from 0 to 2111
+ * @offset:  the location from 0 to 2175
  * @len:     number of bytes to read
  * @rbuf:    read buffer to hold @len bytes
  *
@@ -735,12 +776,15 @@ static int spinand_get_info(struct spi_device *spi_nand, struct spinand_info *in
 		info->page_main_size = 2048;
 		info->page_spare_size = 128;
 		info->page_num_per_block = 64;
-
+        
 		info->block_shift = 17;     // used to get the block number on the device
 		info->block_mask = 0x1ffff; // used to get the lower bits (page number and position on page)
 
 		info->page_shift = 11;     // 2^(info->page_shift) = number of bytes on a page, used to get a page number in the device
 		info->page_mask = 0x7ff;   // 11 ones, used to get the position on a page 
+        
+        info->die_select_shift = 28; // shift down this far to determine if in the upper or lower address space
+        info->has_die_select = 1; // true if it has die select
 		
 		info->ecclayout = &spinand_oob_128;
 	}	
@@ -800,6 +844,7 @@ static int __devinit spinand_probe(struct spi_device *spi_nand)
 	chip->read_page = spinand_read_page;
 	chip->program_page = spinand_program_page;
 	chip->erase_block = spinand_erase_block;
+    chip->die_select = spinand_die_select; 
 
 	chip->buf = kzalloc(info->page_size, GFP_KERNEL);
 	if (!chip->buf)
