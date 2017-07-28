@@ -26,7 +26,7 @@
 
 /*
  * Debug output control. While debugging, have I2C_A2F_DEBUG defined.
- * In deployment, make sure that I2C_A2F_DEBUG is undefined 
+ * In deployment, make sure that I2C_A2F_DEBUG is undefined
  * to avoid performance and size overhead of debug messages.
  */
 #define I2C_A2F_DEBUG
@@ -91,14 +91,14 @@ struct i2c_a2f {
 	unsigned int			ref_clk;	/* Ref clock */
 	unsigned int			i2c_clk;	/* Bus clock */
 	struct i2c_msg*			msg;		/* Current message */
-	int				msg_n;		/* Segments in msg */	
-	int				msg_i;		/* Idx in a segment */	
-	volatile int			msg_status;	/* Message status */	
+	int				msg_n;		/* Segments in msg */
+	int				msg_i;		/* Idx in a segment */
+	volatile int			msg_status;	/* Message status */
 	struct i2c_adapter		adap;		/* I2C adapter data */
 	wait_queue_head_t		wait;		/* Wait queue */
 };
 
-/* 
+/*
  * Description of the the SmartFusion I2C hardware interfaces.
  * This is a 1-to-1 mapping of Actel's documentation onto a C structure.
  * Refer to SmartFusion Data Sheet for details.
@@ -120,7 +120,7 @@ struct i2c_a2f_regs {
 #define I2C_A2F(c)			(I2C_A2F_REGS(c->regs))
 
 /*
- * Some bits in various CSRs 
+ * Some bits in various CSRs
  */
 #define	I2C_A2F_CTRL_ENS1		(1<<6)
 #define	I2C_A2F_CTRL_STA		(1<<5)
@@ -160,7 +160,7 @@ static int i2c_a2f_hw_init(struct i2c_a2f *c)
 	static struct {
 		unsigned int	d;
 		unsigned int	b;
-	} div[] = 
+	} div[] =
 	{{60,6},{120,5},{160,3},{192,2},{224,1},{256,0},{960,4},{0,0}};
 
 	unsigned int v, b;
@@ -191,7 +191,7 @@ static int i2c_a2f_hw_init(struct i2c_a2f *c)
  	 * Set up the clock rate
  	 */
 	v = readl(&I2C_A2F(c)->ctrl);
-	writel(v 
+	writel(v
 		| (v & ~(1 << I2C_A2F_CTRL_CR0_SHFT))
 		| (((b >> 0) & 0x1) << I2C_A2F_CTRL_CR0_SHFT)
 		| (v & ~(1 << I2C_A2F_CTRL_CR1_SHFT))
@@ -221,7 +221,7 @@ static void i2c_a2f_hw_release(struct i2c_a2f *c)
 	/*
  	 * Disable the controller
  	 */
-	writel(readl(&I2C_A2F(c)->ctrl) & ~I2C_A2F_CTRL_ENS1, 
+	writel(readl(&I2C_A2F(c)->ctrl) & ~I2C_A2F_CTRL_ENS1,
 		&I2C_A2F(c)->ctrl);
 
 	d_printk(2, "bus=%d\n", c->bus);
@@ -237,12 +237,12 @@ static void i2c_a2f_hw_clear(struct i2c_a2f *c)
 	/*
  	 * Clear various conditions that affect the controler and the bus
  	 */
-	writel(readl(&I2C_A2F(c)->ctrl) & 
-		~(I2C_A2F_CTRL_SI | I2C_A2F_CTRL_STA | 
+	writel(readl(&I2C_A2F(c)->ctrl) &
+		~(I2C_A2F_CTRL_SI | I2C_A2F_CTRL_STA |
 		  I2C_A2F_CTRL_STO | I2C_A2F_CTRL_AA),
 		&I2C_A2F(c)->ctrl);
 
-	d_printk(3, "ok\n"); 
+	d_printk(3, "ok\n");
 }
 
 /*
@@ -260,13 +260,13 @@ static irqreturn_t i2c_a2f_irq(int irq, void *d)
 	irqreturn_t ret = IRQ_HANDLED;
 
 	/*
- 	 * Check if there is a serial interrupt event 
+ 	 * Check if there is a serial interrupt event
  	 * pending at the controller. Bail out if there is none
  	 */
 	if (!(ctrl & I2C_A2F_CTRL_SI)) {
 		ret = IRQ_NONE;
 		goto Done;
-	}	
+	}
 
 	/*
 	 * Implement the state machine defined by the I2C controller
@@ -274,8 +274,9 @@ static irqreturn_t i2c_a2f_irq(int irq, void *d)
 	switch (sta) {
 
 	case I2C_A2F_STATUS_START:
+    printk("I2C_A2F_STATUS_START\n");
 	case I2C_A2F_STATUS_REPSTART:
-
+    printk("I2C_A2F_STATUS_REPSTART\n");
 		/*
 		 * Remove the start condition
 		 */
@@ -285,18 +286,21 @@ static irqreturn_t i2c_a2f_irq(int irq, void *d)
  		 * Send out addr and direction
  		 */
 		writel((c->msg->addr << 1) |
-                        (c->msg->flags & I2C_M_RD ? 1 : 0), 
+                        (c->msg->flags & I2C_M_RD ? 1 : 0),
 			&I2C_A2F(c)->data);
 
 		break;
 
 	case I2C_A2F_STATUS_ADDR_W_NACK:
+        printk("I2C_A2F_STATUS_ADDR_W_NACK\n");
 	case I2C_A2F_STATUS_ADDR_R_NACK:
+        printk("I2C_A2F_STATUS_ADDR_R_NACK\n");
 	case I2C_A2F_STATUS_DATA_W_NACK:
+        printk("I2C_A2F_STATUS_DATA_W_NACK\n");
 
-		/* 
+		/*
 		 * No ack -> let's stop and report a failure
-		 */	
+		 */
 		writel(ctrl | I2C_A2F_CTRL_STO, &I2C_A2F(c)->ctrl);
 		c->msg_status = -ENODEV;
 		disable_intr = 1;
@@ -304,7 +308,9 @@ static irqreturn_t i2c_a2f_irq(int irq, void *d)
 		break;
 
 	case I2C_A2F_STATUS_ADDR_W_ACK:
+        printk("I2C_A2F_STATUS_ADDR_W_ACK\n");
 	case I2C_A2F_STATUS_DATA_W_ACK:
+        printk("I2C_A2F_STATUS_DATA_W_ACK\n");
 
 		/*
  		 * If there is more data to send, send it
@@ -337,6 +343,7 @@ static irqreturn_t i2c_a2f_irq(int irq, void *d)
 		break;
 
 	case I2C_A2F_STATUS_ADDR_R_ACK:
+        printk("I2C_A2F_STATUS_ADDR_R_ACK\n");
 
 		/*
 		 * Will be receiving the last byte from the slave.
@@ -345,7 +352,7 @@ static irqreturn_t i2c_a2f_irq(int irq, void *d)
 		if (c->msg_i + 1 == c->msg->len) {
 			writel(ctrl & ~I2C_A2F_CTRL_AA, &I2C_A2F(c)->ctrl);
 		}
-	
+
 		/*
 		 * Will be receiving more data from the slave.
 		 * Return ACK to tell the slave to send more.
@@ -357,6 +364,7 @@ static irqreturn_t i2c_a2f_irq(int irq, void *d)
 		break;
 
 	case I2C_A2F_STATUS_DATA_R_ACK:
+        printk("I2C_A2F_STATUS_DATA_R_ACK\n");
 
 		/*
  		 * Retrieve the data but
@@ -371,7 +379,7 @@ static irqreturn_t i2c_a2f_irq(int irq, void *d)
 		if (c->msg_i + 1 == c->msg->len) {
 			writel(ctrl & ~I2C_A2F_CTRL_AA, &I2C_A2F(c)->ctrl);
 		}
-	
+
 		/*
 	 	 * Will be receiving more data from the slave.
 	 	 * Return ACK to tell the slave to send more.
@@ -383,6 +391,7 @@ static irqreturn_t i2c_a2f_irq(int irq, void *d)
 		break;
 
 	case I2C_A2F_STATUS_DATA_R_NACK:
+        printk("I2C_A2F_STATUS_DATA_R_NACK\n");
 
 		/*
  		 * Retrieve the data but
@@ -414,10 +423,10 @@ static irqreturn_t i2c_a2f_irq(int irq, void *d)
 		break;
 
 	default:
-
-		/* 
+          printk("I2C_A2F_STATUS Default\n");
+		/*
 		 * Some error condition -> let's stop and report a failure
-		 */	
+		 */
 		i2c_a2f_hw_clear(c);
 		c->msg_status = -EIO;
 		disable_intr = 1;
@@ -438,7 +447,7 @@ static irqreturn_t i2c_a2f_irq(int irq, void *d)
 		disable_irq_nosync(c->irq);
 	}
 
-	/* 
+	/*
 	 * Exit on failure or all bytes have been transferred
 	 */
 	if (c->msg_status != -EBUSY) {
@@ -505,7 +514,7 @@ static int i2c_a2f_transfer(struct i2c_adapter *a, struct i2c_msg *m, int n)
 
 #if defined(I2C_A2F_DEBUG)
 	for (i = 0; i < n; i++) {
-		d_printk(4, "%d:flags=0x%x,addr=0x%x,len=%d\n", 
+		d_printk(4, "%d:flags=0x%x,addr=0x%x,len=%d\n",
 			 i, m[i].flags, m[i].addr, m[i].len);
 		for (j = 0; j < m[i].len; j++) {
 			d_printk(4, "%d=%x\n", j, m[i].buf[j]);
@@ -551,8 +560,8 @@ static int __devinit i2c_a2f_probe(struct platform_device *dev)
 	int ret = 0;
 
 	/*
- 	 * Get the bus # from the platform device: 
- 	 * [0,1]->hard-core I2C contorller of SmartFusion; 
+ 	 * Get the bus # from the platform device:
+ 	 * [0,1]->hard-core I2C contorller of SmartFusion;
  	 * [2-9]->soft-IP I2C controller specific to a custom design.
  	 */
 	bus = dev->id;
@@ -582,7 +591,7 @@ static int __devinit i2c_a2f_probe(struct platform_device *dev)
 		goto Error_release_nothing;
 	}
 
-	/* 
+	/*
 	 * Allocate the controller-private data structure
 	 */
 	c = kzalloc(sizeof(struct i2c_a2f), GFP_KERNEL);
@@ -649,12 +658,12 @@ static int __devinit i2c_a2f_probe(struct platform_device *dev)
 	c->adap.algo_data = c;
 	c->adap.dev.parent = &dev->dev;
 
-	/* 
+	/*
  	 * Set up the wait queue
  	 */
 	init_waitqueue_head(&c->wait);
 
-	/* 
+	/*
  	 * Initialize the controller hardware
  	 */
 	ret = i2c_a2f_hw_init(c);
@@ -682,21 +691,21 @@ static int __devinit i2c_a2f_probe(struct platform_device *dev)
 	 */
 Error_release_hw:
 	i2c_a2f_hw_release(c);
-Error_release_irq: 
+Error_release_irq:
 	free_irq(c->irq, c);
-Error_release_regs: 
+Error_release_regs:
 	iounmap(c->regs);
-Error_release_mem_region: 
+Error_release_mem_region:
 	release_mem_region(regs->start, resource_size(regs));
-Error_release_memory: 
+Error_release_memory:
 	kfree(c);
 	platform_set_drvdata(dev, NULL);
-Error_release_nothing: 
-	
+Error_release_nothing:
+
 Done:
-	d_printk(1, "dev=%s,regs=%p,irq=%d,ref_clk=%d,i2c_clk=%d,ret=%d\n", 
-		 dev_name(&dev->dev), 
-		 c ? c->regs : NULL, c ? c->irq : 0, 
+	d_printk(1, "dev=%s,regs=%p,irq=%d,ref_clk=%d,i2c_clk=%d,ret=%d\n",
+		 dev_name(&dev->dev),
+		 c ? c->regs : NULL, c ? c->irq : 0,
 		 c ? c->ref_clk : 0, c ? c->i2c_clk : 0, ret);
 	return ret;
 }
@@ -748,7 +757,7 @@ static struct platform_driver i2c_a2f_drv = {
 static int __init i2c_a2f_module_init(void)
 {
 	int ret;
-	
+
 	ret = platform_driver_register(&i2c_a2f_drv);
 
 	d_printk(1, "drv=%s,ret=%d\n", i2c_a2f_drv.driver.name, ret);
@@ -770,4 +779,3 @@ module_exit(i2c_a2f_module_exit);
 MODULE_AUTHOR("Vladimir Khusainov, <vlad@emcraft.com>");
 MODULE_DESCRIPTION("Device driver for the I2C controller of SmartFusion");
 MODULE_LICENSE("GPL");
-
