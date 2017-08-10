@@ -346,9 +346,14 @@ void __init m2s_gpio_init(void)
 	m2s_irq_chip.mask = get_irq_chip(irq_base)->mask;
 	m2s_irq_chip.unmask = get_irq_chip(irq_base)->unmask;
 
+	/* Dallon: Changed handle_edge_irq to handle_level_irq. 
+	All of our GPIO interrupts are supposed to be level-sensitive.
+	Hopefully this will fix the issue where the interrupts aren't
+	acknowledged (resulting in interrupts interrupting themselves) */
+	
 	for (i = 0; i < MSS_GPIO_IRQS; i++) {
 		set_irq_chip(i + irq_base, &m2s_irq_chip);
-		set_irq_handler(i + irq_base, handle_edge_irq);
+		set_irq_handler(i + irq_base, handle_level_irq);
 		set_irq_flags(i + irq_base, IRQF_VALID);
 		set_irq_chip_data(i + irq_base, &mss_gpio_chip);
 	}
