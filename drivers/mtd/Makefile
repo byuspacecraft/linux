@@ -31,4 +31,6 @@ inftl-objs		:= inftlcore.o inftlmount.o
 
 obj-y		+= chips/ lpddr/ maps/ devices/ nand/ onenand/ tests/
 
+obj-y		+= spinand/ 
+
 obj-$(CONFIG_MTD_UBI)		+= ubi/
