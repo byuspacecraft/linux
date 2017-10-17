@@ -469,6 +469,12 @@ config MTD_NAND_SH_FLCTL
 	  Several Renesas SuperH CPU has FLCTL. This option enables support
 	  for NAND Flash using FLCTL. This driver support SH7723.
 
+config MTD_NAND_MT29F
+   tristate "Support Micron MT29F"
+   depends on MTD_NAND
+   help
+      This enables access to Micron MT29F SPI Flash.
+
 config MTD_NAND_DAVINCI
         tristate "Support NAND on DaVinci SoC"
         depends on ARCH_DAVINCI
