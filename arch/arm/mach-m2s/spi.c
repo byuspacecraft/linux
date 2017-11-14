@@ -231,52 +231,6 @@ void __init m2s_spi_init(void)
 				};
 #endif
 
-#if defined(CONFIG_M2S_MSS_SPI1) && defined(CONFIG_MTD_NAND_MT29F)
-
-		/*
-		 * SPI Flash partitioning for
-		 * the first on-dongle SPI Flash (SPI1, CS0):
-		 */
-#		define FLASH_PART1_OFFSET__DONGLE1	(1024 * 1024 * 500)
-		static struct mtd_partition
-			spi_flash_partitions__dongle1[] = {
-				{
-					.name = "dongle1_part0",
-					.size = FLASH_PART1_OFFSET__DONGLE1,
-					.offset = 0,
-				},
-			};
-
-		/*
-		 * SPI Flash data for the first on-dongle Flash
-		 */
-		static struct flash_platform_data
-			spi_flash_data__dongle1 = {
-				.name = "spi_nand",
-				.parts =  spi_flash_partitions__dongle1,
-				.nr_parts =
-					ARRAY_SIZE(spi_flash_partitions__dongle1),
-				.type = "spi_nand",
-			};
-
-
-#define FLASH_SIZE_MT29F	(64*1024*256)
-      static struct mtd_partition mt29f_spi_flash_partitions[] = {
-            {
-               .name = "mt29f_part0",
-               .size = FLASH_SIZE_MT29F,
-               .offset = 0,
-            },
-         };
-      static struct flash_platform_data mt29f_spi_flash_data = {
-            .name = "mt29f",
-            .parts =  mt29f_spi_flash_partitions,
-            .nr_parts =
-               ARRAY_SIZE(mt29f_spi_flash_partitions),
-            .type = "MT29F",
-         };
-#endif
-
 
 		/*
 		 * Array of registered SPI slaves
@@ -425,17 +379,6 @@ static struct spi_board_info m2s_som_spi_board_info[] = {
 
 			},
 #endif
-
-#if defined(CONFIG_M2S_MSS_SPI1) && defined(CONFIG_MTD_NAND_MT29F)
-         {
-            .modalias = "mt29f",
-            .max_speed_hz = CONFIG_SYS_M2S_SYSREF/4,
-            .bus_num = 1,
-            .chip_select = 0,
-            .mode = SPI_MODE_3,
-         },
-#endif
-
 		};
 
 		spi_register_board_info(sf2_dev_kit_sf_inf,
