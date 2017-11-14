@@ -28,7 +28,7 @@ GNU General Public License for more details.
 
 #include <linux/spi/spi.h>
 
-#define DEBUG_PRINT_JACOBW_ADD // enable debug print statements added by jacob willis
+//#define DEBUG_PRINT_JACOBW_ADD // enable debug print statements added by jacob willis
 
 #define mu_spi_nand_driver_version "M2S-MTD_01.00_Linux2.6.33_20100507"
 #define SPI_NAND_MICRON_DRIVER_KEY 0x1233567
@@ -760,18 +760,19 @@ static int spinand_get_info(struct spi_device *spi_nand, struct spinand_info *in
 {
     #ifdef DEBUG_PRINT_JACOBW_ADD
         printk("\n\rSPINAND_LLD: %s", __func__);
+        printk("\n\rSPINAND_LLD: id[0]=%x id[1]=%x", id[0], id[1]);
     #endif
-	if (id[0]==0x2C && (id[1]==0x11 || id[1]==0x12 || id[1]==0x13 || id[1] == 0x36))
+	if (id[0]==0x2C && (id[1]==0x11 || id[1]==0x12 || id[1]==0x13 || id[1]==0x14 || id[1] == 0x36))
 	{
 		/* FIX SIZES AND SUCH HERE: TODO */
 		info->mid = id[0];
 		info->did = id[1];
-		info->name = "MT29F4G01ADAGDXX";
-		info->nand_size = (4096 * 64 * 2176);
-		info->usable_size = (4096 * 64 * 2048);
+		info->name = "MT29F1G01ABAFDXX";
+		info->nand_size = (1024 * 64 * 2176);
+		info->usable_size = (1024 * 64 * 2048);
 		info->block_size = (2176*64);
 		info->block_main_size = (2048*64);
-		info->block_num_per_chip = 4096;
+		info->block_num_per_chip = 1024;
 		info->page_size = 2176;
 		info->page_main_size = 2048;
 		info->page_spare_size = 128;
@@ -784,7 +785,7 @@ static int spinand_get_info(struct spi_device *spi_nand, struct spinand_info *in
 		info->page_mask = 0x7ff;   // 11 ones, used to get the position on a page 
         
         info->die_select_shift = 28; // shift down this far to determine if in the upper or lower address space
-        info->has_die_select = 1; // true if it has die select
+        info->has_die_select = 0; // true if it has die select
 		
 		info->ecclayout = &spinand_oob_128;
 	}	

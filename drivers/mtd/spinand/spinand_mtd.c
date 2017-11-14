@@ -182,7 +182,9 @@ static int spinand_read_ops(struct mtd_info *mtd, loff_t from,
 
 	/* for main data */
 	page_offset = from & info->page_mask; // position to start on the page is held in lower bits of from
+#ifdef DEBUG_PRINT_JACOBW_ADD
     printk("\n\rSPINAND_MTD: spinand_read_ops from = 0x%llx, page_id = %d", from, page_id);
+#endif
     // Determine which die we should start on
     u8 db_start = ((u8)(from >> info->die_select_shift)) & 0x01; // get the topmost bit of from    
     if(info->has_die_select){   // check if this device has die select
@@ -376,8 +378,9 @@ static int spinand_write_ops(struct mtd_info *mtd, loff_t to,
 	/* for main data */
 	page_offset = to & info->page_mask;
 	page_num = (page_offset + ops->len + info->page_main_size -1 ) / info->page_main_size;
-
-    printk("\n\rSPINAND_MTD: spinand_write_ops to = 0x%llx, page_id = %d", to, page_id);
+#ifdef DEBUG_PRINT_JACOB_ADD
+   printk("\n\rSPINAND_MTD: spinand_write_ops to = 0x%llx, page_id = %d", to, page_id);
+#endif
     // Determine which die we should start on
     u8 db_start = ((u8)(to >> info->die_select_shift)) & 0x01; // get the topmost bit of to
     
