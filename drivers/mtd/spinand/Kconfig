@@ -22,4 +22,20 @@ config MTD_SPINAND_SWECC
 	help
 	 software ECC
 
+config MTD_SPI1_MT29F
+   bool "Configure MT29F on SPI1"
+   depends on MTD_SPINAND
+
+choice
+   prompt "SPI1 MT29F Size"
+   default MTD_SPI1_MT29F1G
+   depends on MTD_SPI1_MT29F
+   
+   config MTD_SPI1_MT29F1G
+      bool "MT29F1G"
+   config MTD_SPI1_MT29F2G
+      bool "MT29F2G"
+
+endchoice
+
 endif

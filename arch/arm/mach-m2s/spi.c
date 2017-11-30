@@ -179,18 +179,22 @@ void __init m2s_spi_init(void)
 
 #endif
 
-#if defined(CONFIG_M2S_MSS_SPI1) && defined(CONFIG_MTD_M25P80)
+#if defined(CONFIG_M2S_MSS_SPI1) && defined(CONFIG_MTD_SPI1_MT29F)
 
 		/*
 		 * SPI Flash partitioning for
 		 * the first on-dongle SPI Flash (SPI1, CS0):
 		 */
-#		define FLASH_SIZE_MT29F1G	(2048 * 64 * 1024)
+#if defined(CONFIG_MTD_SPI1_MT29F1G)
+#define FLASH_SIZE_MT29F	(2048 * 64 * 1024)
+#elif defined(CONFIG_MTD_SPI1_MT29F2G)
+#define FLASH_SIZE_MT29F   (2048 * 64 * 2048)
+#endif
 		static struct mtd_partition
 			spi_flash_partitions__dongle1[] = {
 				{
 					.name = "dongle1_part0",
-					.size = FLASH_SIZE_MT29F1G,
+					.size = FLASH_SIZE_MT29F,
 					.offset = 0,
 				},
 			};
@@ -209,26 +213,26 @@ void __init m2s_spi_init(void)
 
 /* 512 Mb SPI flash s25fl512 */
 
-			#		define FLASH_SIZE_S25FL512	(64*1024*256) /* should be (256*1024*256) */
-					static struct mtd_partition
+//			#		define FLASH_SIZE_S25FL512	(64*1024*256) /* should be (256*1024*256) */
+/*					static struct mtd_partition
 						spi_flash_partitions__s25fl512[] = {
 							{
 								.name = "s25fl512_part0",
 								.size = FLASH_SIZE_S25FL512,
 								.offset = 0,
 							},
-						};
+						};*/
 			/*
 			 * SPI Flash data for the 512 Mb SPI flash s25fl512
 			 */
-			static struct flash_platform_data
+/*			static struct flash_platform_data
 				spi_flash_data__s25fl512 = {
 					.name = "s25fl512",
 					.parts =  spi_flash_partitions__s25fl512,
 					.nr_parts =
 						ARRAY_SIZE(spi_flash_partitions__s25fl512),
 					.type = "s25fl512s",
-				};
+				};*/
 #endif
 
 
@@ -266,9 +270,9 @@ static struct spi_board_info m2s_som_spi_board_info[] = {
 			},
 #endif*/
 
-#if defined(CONFIG_M2S_MSS_SPI1) && defined(CONFIG_MTD_M25P80)
+#if defined(CONFIG_M2S_MSS_SPI1) && defined(CONFIG_MTD_SPI1_MT29F)
 			/*
-			 * External 4Gb Micron SPI Nand
+			 * Micron MT29FxG on SPI1
 			 */
 			{
 				.modalias = "spi_nand",
