@@ -179,18 +179,19 @@ void __init m2s_spi_init(void)
 
 #endif
 
-#if defined(CONFIG_M2S_MSS_SPI1) && defined(CONFIG_MTD_M25P80)
+#if defined(CONFIG_M2S_MSS_SPI1) && defined(CONFIG_MTD_SPI1_MT29F)
+
+#define FLASH_SIZE_MT29F	(2048 * 64 * 1024)
 
 		/*
 		 * SPI Flash partitioning for
 		 * the first on-dongle SPI Flash (SPI1, CS0):
 		 */
-#		define FLASH_SIZE_MT29F1G	(2048 * 64 * 1024)
 		static struct mtd_partition
 			spi_flash_partitions__dongle1[] = {
 				{
 					.name = "dongle1_part0",
-					.size = FLASH_SIZE_MT29F1G,
+					.size = FLASH_SIZE_MT29F,
 					.offset = 0,
 				},
 			};
@@ -207,32 +208,39 @@ void __init m2s_spi_init(void)
 				.type = "spi_nand",
 			};
 
-/* 512 Mb SPI flash s25fl512 */
+#if defined(CONFIG_MTD_SPI1_1_MT29F)
 
-			#		define FLASH_SIZE_S25FL512	(64*1024*256) /* should be (256*1024*256) */
-					static struct mtd_partition
-						spi_flash_partitions__s25fl512[] = {
-							{
-								.name = "s25fl512_part0",
-								.size = FLASH_SIZE_S25FL512,
-								.offset = 0,
-							},
-						};
-			/*
-			 * SPI Flash data for the 512 Mb SPI flash s25fl512
-			 */
-			static struct flash_platform_data
-				spi_flash_data__s25fl512 = {
-					.name = "s25fl512",
-					.parts =  spi_flash_partitions__s25fl512,
-					.nr_parts =
-						ARRAY_SIZE(spi_flash_partitions__s25fl512),
-					.type = "s25fl512s",
-				};
+		/*
+		 * SPI Flash partitioning for
+		 * the second on-dongle SPI Flash (SPI1, CS1):
+		 */
+		static struct mtd_partition
+			spi_flash_partitions__dongle2[] = {
+				{
+					.name = "dongle2_part0",
+					.size = FLASH_SIZE_MT29F,
+					.offset = 0,
+				},
+			};
+
+		/*
+		 * SPI Flash data for the first on-dongle Flash
+		 */
+		static struct flash_platform_data
+			spi_flash_data__dongle2 = {
+				.name = "spi_nand",
+				.parts =  spi_flash_partitions__dongle2,
+				.nr_parts =
+					ARRAY_SIZE(spi_flash_partitions__dongle2),
+				.type = "spi_nand",
+			};
+
+#endif   // defined(CONFIG_MTD_SPI1_1_MT29F)
+
 #endif
 
 
-		/*
+      /*
 		 * Array of registered SPI slaves
 		 */
 static struct spi_board_info m2s_som_spi_board_info[] = {
@@ -251,24 +259,9 @@ static struct spi_board_info m2s_som_spi_board_info[] = {
 			},
 #endif
 
-//#if defined(CONFIG_M2S_MSS_SPI1) && defined(CONFIG_SPI_SPIDEV)
+#if defined(CONFIG_M2S_MSS_SPI1) && defined(CONFIG_MTD_SPI1_MT29F)
 			/*
-			 * On-module SPI using SPI user-space interface
-			 * (resides at SPI1,CS0)
-			 */
-			 /*
-			{
-				.modalias = "spidev",
-				.max_speed_hz = CONFIG_SYS_M2S_SYSREF/4,
-				.bus_num = 1,
-				.chip_select = 0,
-				.mode = SPI_MODE_3,
-			},
-#endif*/
-
-#if defined(CONFIG_M2S_MSS_SPI1) && defined(CONFIG_MTD_M25P80)
-			/*
-			 * External 4Gb Micron SPI Nand
+			 * Micron MT29F on SPI1.0
 			 */
 			{
 				.modalias = "spi_nand",
@@ -277,37 +270,23 @@ static struct spi_board_info m2s_som_spi_board_info[] = {
 				.bus_num = 1,
 				.chip_select = 0,
 				.mode = SPI_MODE_3,
-			},
+         },
+#if defined(CONFIG_MTD_SPI1_1_MT29F)
+			/*
+			 * Micron MT29F on SPI1.1
+			 */
+			{
+				.modalias = "spi_nand",
+				.platform_data = &spi_flash_data__dongle2,
+				.max_speed_hz = 133000000,
+				.bus_num = 1,
+				.chip_select = 1,
+				.mode = SPI_MODE_3,
+         },
+#endif   // defined(CONFIG_MTD_SPI1_1_MT29F)
+
 #endif
 
-// For S25FL512 Flash memory on EPS board REV 2
-//#if defined(CONFIG_M2S_MSS_SPI1) && defined(CONFIG_MTD_M25P80)
-			/*
-			 * s25fl512  on SPI1 SS2
-			 */
-/*			{
-				.modalias = "m25p80",
-				.platform_data = &spi_flash_data__s25fl512,
-				.max_speed_hz = CONFIG_SYS_M2S_SYSREF/4,
-				.bus_num = 1,
-				.chip_select = 2,
-				.mode = SPI_MODE_3,
-			},
-*/
-			/*
-			 * s25fl512  on SPI1 SS3
-			 */
-/*			{
-				.modalias = "m25p80",
-				.platform_data = &spi_flash_data__s25fl512,
-				.max_speed_hz = CONFIG_SYS_M2S_SYSREF/4,
-				.bus_num = 1,
-				.chip_select = 3,
-				.mode = SPI_MODE_3,
-			},
-
-
-#endif*/
 		};
 
 		/*

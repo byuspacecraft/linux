@@ -22,4 +22,13 @@ config MTD_SPINAND_SWECC
 	help
 	 software ECC
 
+config MTD_SPI1_MT29F
+   bool "Configure MT29F on SPI1"
+   depends on MTD_SPINAND
+
+config MTD_SPI1_1_MT29F
+   bool "Configure second MT29F on SPI1.1"
+   depends on MTD_SPINAND
+   depends on MTD_SPI1_MT29F
+
 endif
