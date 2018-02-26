@@ -152,7 +152,8 @@ void __init m2s_spi_init(void)
 		 */
 #		define M2S_SOM_SF_MTD_OFFSET		0x010000 /* 64 KB */
 #		define M2S_SOM_SF_MTD_SIZE0		0x400000 /*  4 MB */
-#		define M2S_SOM_SF_MTD_SIZE1		0xBF0000 /*~12 MB */
+#		define M2S_SOM_SF_MTD_SIZE1		0x080000 /*512 KB */
+#		define M2S_SOM_SF_MTD_SIZE2		0xB70000 /*~12 MB */
 		static struct mtd_partition m2s_som_sf_mtd[] = {
 			{
 				.name = "spi_flash_uboot_env",
@@ -163,11 +164,17 @@ void __init m2s_spi_init(void)
 				.offset = M2S_SOM_SF_MTD_OFFSET,
 				.size = M2S_SOM_SF_MTD_SIZE0,
 			}, {
-				.name = "spi_flash_jffs2",
+				.name = "spi_flash_boot",
 				.offset = M2S_SOM_SF_MTD_OFFSET +
 					M2S_SOM_SF_MTD_SIZE0,
 				.size = M2S_SOM_SF_MTD_SIZE1,
-			},
+			}, {
+            .name = "spi_flash_0",
+            .offset = M2S_SOM_SF_MTD_OFFSET +
+               M2S_SOM_SF_MTD_SIZE0 +
+               M2S_SOM_SF_MTD_SIZE1,
+            .size = M2S_SOM_SF_MTD_SIZE2,
+         },
 		};
 
 		static struct flash_platform_data m2s_som_sf_data = {
