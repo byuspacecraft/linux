@@ -169,11 +169,11 @@ void __init m2s_spi_init(void)
 					M2S_SOM_SF_MTD_SIZE0,
 				.size = M2S_SOM_SF_MTD_SIZE1,
 			}, {
-            .name = "spi_flash_0",
-            .offset = M2S_SOM_SF_MTD_OFFSET +
-               M2S_SOM_SF_MTD_SIZE0 +
-               M2S_SOM_SF_MTD_SIZE1,
-            .size = M2S_SOM_SF_MTD_SIZE2,
+				.name = "spi_flash_0",
+				.offset = M2S_SOM_SF_MTD_OFFSET +
+					M2S_SOM_SF_MTD_SIZE0 +
+					M2S_SOM_SF_MTD_SIZE1,
+				.size = M2S_SOM_SF_MTD_SIZE2,
          },
 		};
 
