@@ -28,7 +28,7 @@ GNU General Public License for more details.
 
 #include <linux/spi/spi.h>
 
-#define DEBUG_PRINT_JACOBW_ADD // enable debug print statements added by jacob willis
+//#define DEBUG_PRINT_JACOBW_ADD // enable debug print statements added by jacob willis
 
 #define mu_spi_nand_driver_version "M2S-MTD_01.00_Linux2.6.33_20100507"
 #define SPI_NAND_MICRON_DRIVER_KEY 0x1233567
