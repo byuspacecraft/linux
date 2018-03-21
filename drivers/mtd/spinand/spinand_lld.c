@@ -758,37 +758,65 @@ static int spinand_erase_block(struct spi_device *spi_nand, struct spinand_info 
  */
 static int spinand_get_info(struct spi_device *spi_nand, struct spinand_info *info, u8* id)
 {
-    #ifdef DEBUG_PRINT_JACOBW_ADD
-        printk("\n\rSPINAND_LLD: %s", __func__);
-        printk("\n\rSPINAND_LLD: id[0]=%x id[1]=%x", id[0], id[1]);
-    #endif
-	if (id[0]==0x2C && (id[1]==0x11 || id[1]==0x12 || id[1]==0x13 || id[1]==0x14 || id[1] == 0x36))
-	{
-		/* FIX SIZES AND SUCH HERE: TODO */
-		info->mid = id[0];
-		info->did = id[1];
-		info->name = "MT29F1G01ABAFDXX";
-		info->nand_size = (1024 * 64 * 2176);
-		info->usable_size = (1024 * 64 * 2048);
-		info->block_size = (2176*64);
-		info->block_main_size = (2048*64);
-		info->block_num_per_chip = 1024;
-		info->page_size = 2176;
-		info->page_main_size = 2048;
-		info->page_spare_size = 128;
-		info->page_num_per_block = 64;
-        
-		info->block_shift = 17;     // used to get the block number on the device
-		info->block_mask = 0x1ffff; // used to get the lower bits (page number and position on page)
+#ifdef DEBUG_PRINT_JACOBW_ADD
+   printk("\n\rSPINAND_LLD: %s", __func__);
+   printk("\n\rSPINAND_LLD: id[0]=%x id[1]=%x", id[0], id[1]);
+#endif
 
-		info->page_shift = 11;     // 2^(info->page_shift) = number of bytes on a page, used to get a page number in the device
-		info->page_mask = 0x7ff;   // 11 ones, used to get the position on a page 
-        
-        info->die_select_shift = 28; // shift down this far to determine if in the upper or lower address space
-        info->has_die_select = 0; // true if it has die select
-		
-		info->ecclayout = &spinand_oob_128;
-	}	
+   info->mid = id[0];
+   info->did = id[1];
+   
+   if (id[0]==0x2C)  // Manufacturer ID
+   {
+      switch(id[1])  // Device ID
+      {
+         //case 0x11:
+         //case 0x12:
+         //case 0x13:
+         case 0x14:  // MT29F1G
+            info->name = "MT29F1G01ABAFDXX";
+            info->nand_size = (1024 * 64 * 2176);
+            info->usable_size = (1024 * 64 * 2048);
+            info->block_size = (64 * 2176);
+            info->block_main_size = (64 * 2048);
+            info->block_num_per_chip = 1024;
+            info->page_size = 2176;
+            info->page_main_size = 2048;
+            info->page_spare_size = 128;
+            info->page_num_per_block = 64;
+            info->has_die_select = 0;
+            break;
+         case 0x36:  // MT29F4G
+            info->name = "MT29F4G01ADAGDXX";
+            info->nand_size = (1024 * 64 * 2176);
+            info->usable_size = (1024 * 64 * 2048);
+            info->block_size = (64 * 2176);
+            info->block_main_size = (64 * 2048);
+            info->block_num_per_chip = 1024;
+            info->page_size = 2176;
+            info->page_main_size = 2048;
+            info->page_spare_size = 128;
+            info->page_num_per_block = 64;
+            info->has_die_select = 1;
+            break;
+         default:
+            printk("\n\rSPINAND_LLD: did id[1]=%x not implemented!", id[1]);
+            break;
+      }
+
+      info->block_shift = 17;     // used to get the block number on the device
+      info->block_mask = 0x1ffff; // used to get the lower bits (page number and position on page)
+
+      info->page_shift = 11;     // 2^(info->page_shift) = number of bytes on a page, used to get a page number in the device
+      info->page_mask = 0x7ff;   // 11 ones, used to get the position on a page 
+
+      info->die_select_shift = 28; // shift down this far to determine if in the upper or lower address space
+
+      info->ecclayout = &spinand_oob_128;
+
+   } else {
+      printk("\n\rSPINAND_LLD: mid id[0]=%x not implemented!", id[0]);
+   }
 	return 0;
 }
 
